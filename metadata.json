@@ -1,0 +1,8 @@
+{
+  "name": "GT TOUR AI Social Suite Core Engine",
+  "description": "외국인환자 유치기관 및 종합여행사 GT TOUR의 6대 법률 가드레일 실시간 감사 및 다국어 SNS 패키지(인스타그램 5장 카루셀, 15초 릴스 대본, 샤오홍슈 7장 노트) 구조화 생성 워크스페이스",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "positioning": {
+    "statement": "이 기획은 회사 월 부족액 3,000만 원을 채우는 기획이 아니다. 내년 이후의 집객 자산을 만드는 기획이다.",
+    "doNotBuild": "매출 목표 달성률 위젯을 만들지 말 것"
+  },
+  "ninetyDays": {
+    "posts": 26,
+    "totalViews": "15만~40만",
+    "followersTotal": "1,500~4,000",
+    "lineFriends": "150~500",
+    "fanclubMembers": "150~400",
+    "firstBookings": "3~6",
+    "revenueKrw": "30만~80만",
+    "reuseCount": "5건 이상"
+  },
+  "twelveMonths": {
+    "fanclubMembers": "1,200~2,500",
+    "bookings": "25~45",
+    "revenueKrw": "250만~500만 (최대 700만)",
+    "payback": "2년차"
+  },
+  "assumptions": [
+    "제로 계정에서 90일 시작",
+    "주 2본 = 90일 약 26본",
+    "숏폼 중위값 500~2,000 재생, 상위 1~2본 5만~20만",
+    "팬클럽 가입 전환율 1~2%",
+    "가입자의 첫 예약 전환 1~1.5%"
+  ],
+  "revenueLines": [
+    { "key": "A", "label": "팬 → 예약 전환", "startMonths": 12, "feasibility": "낮음 (3~6건)" },
+    { "key": "B", "label": "B2B 콘텐츠 제작", "startMonths": 3, "feasibility": "중간 — 가장 빨리 현금화" },
+    { "key": "C", "label": "제작물 재사용", "startMonths": 0, "feasibility": "높음" }
+  ],
+  "gaugeSeed": [
+    { "label": "하루토 얼굴 공개", "threshold": 50, "current": 0 }
+  ]
+}
+

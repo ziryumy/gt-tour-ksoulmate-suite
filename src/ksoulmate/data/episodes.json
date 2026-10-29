@@ -1,0 +1,15 @@
+[
+  { "no": 1,  "title": "아이스 아메리카노 한 잔 주세요", "place": "성수동 카페 (2층 창가)", "memberId": "M4", "expressions": ["아이스 아메리카노 한 잔 주세요", "얼음은 적게 넣어 주세요", "여기서 마시고 갈게요"], "status": "PUBLISHED", "complianceRisk": false },
+  { "no": 2,  "title": "이거 다른 색 있어요?", "place": "성수동 편집숍", "memberId": "M3", "expressions": ["이거 다른 색 있어요?", "한 사이즈 크게 주세요", "입어봐도 돼요?"], "status": "REVIEWED", "complianceRisk": false },
+  { "no": 3,  "title": "여기 스타일 좀 바꿔 주세요", "place": "협력 · K-pop 헤어메이크업 스튜디오", "memberId": "M4", "expressions": ["이렇게 스타일링해 주세요", "너무 짧지 않게 해 주세요", "사진처럼 해 주실 수 있어요?"], "status": "EDITED", "complianceRisk": true },
+  { "no": 4,  "title": "이 동작 다시 알려 주세요", "place": "협력 · K-pop 댄스 트레이닝", "memberId": "M5", "expressions": ["이 동작 다시 알려 주세요", "조금 천천히 해 주세요", "박자에 맞춰 볼게요"], "status": "GENERATED", "complianceRisk": false },
+  { "no": 5,  "title": "여기 줄이에요?", "place": "성수동 팝업스토어", "memberId": "M2", "expressions": ["여기 줄 서는 거예요?", "이거 아직 재고 있어요?", "몇 시까지 해요?"], "status": "SCRIPTED", "complianceRisk": false },
+  { "no": 6,  "title": "제 피부 고민은요", "place": "협력 · 프리미엄 피부과·안티에이징", "memberId": "M3", "expressions": ["여기서 상담받을 수 있나요?", "제 피부 타입이 어떻게 되나요?", "관리 후 주의할 점이 있나요?"], "status": "PLANNING", "complianceRisk": true },
+  { "no": 7,  "title": "제 피부 타입 설명해 주세요", "place": "협력 · 1:1 뷰티 클래스", "memberId": "M2", "expressions": ["제 피부는 어떤 타입인가요?", "이 단계는 어떻게 하는 거예요?", "집에서도 이렇게 하면 되나요?"], "status": "PLANNING", "complianceRisk": true },
+  { "no": 8,  "title": "이 부분 다시 불러 주세요", "place": "협력 · K-pop 보컬 트레이닝", "memberId": "M3", "expressions": ["이 부분 다시 불러 주세요", "숨을 어디서 쉬어야 해요?", "조금 더 감정을 넣어 볼게요"], "status": "PLANNING", "complianceRisk": false },
+  { "no": 9,  "title": "덜 맵게 해 주세요", "place": "성수동 한식당", "memberId": "M5", "expressions": ["덜 맵게 해 주세요", "뭐가 제일 맛있어요?", "물 좀 더 주시겠어요?"], "status": "PLANNING", "complianceRisk": false },
+  { "no": 10, "title": "사진 한 장 찍어 주세요", "place": "성수동 사진관", "memberId": "M4", "expressions": ["여기서 사진 찍어도 돼요?", "한 장만 더 찍어 주세요", "이거 받을 수 있어요?"], "status": "PLANNING", "complianceRisk": false },
+  { "no": 11, "title": "5인 합류 · 성수동 전역 미션", "place": "성수동 전역", "memberId": null, "expressions": ["각자 미션 수행", "다섯 명 동시 주문", "합격 판정"], "status": "PLANNING", "complianceRisk": false },
+  { "no": 12, "title": "첫 한국어 발표", "place": "성수동 (실내)", "memberId": null, "expressions": ["5분 스피치", "자기소개", "앞으로의 목표"], "status": "PLANNING", "complianceRisk": false }
+]
+

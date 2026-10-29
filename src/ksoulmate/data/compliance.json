@@ -1,0 +1,54 @@
+[
+  {
+    "code": "JP-01",
+    "label": "특정상거래법",
+    "detail": "일본 소비자에게 유상 판매 시 사업자명·소재지·연락처·반품 조건 등의 표시 의무. 한국 법인이 일본향으로 판매해도 적용.",
+    "blockAt": "BEFORE_PUBLISH",
+    "ownerRole": "유키"
+  },
+  {
+    "code": "JP-02",
+    "label": "경품표시법 (현상 제한)",
+    "detail": "팬덤명 공모의 상품. 일반 현상은 상품 최고액 상한이 있고 초과 설계는 위반. '반드시 당첨' 표시 금지.",
+    "blockAt": "BEFORE_PUBLISH",
+    "ownerRole": "유키"
+  },
+  {
+    "code": "JP-03",
+    "label": "개인정보보호법",
+    "detail": "팬클럽 가입 시 이용 목적 특정·통지, 제3자 제공 제한. 한국 서버 저장은 국경 이전에 해당해 동의·폴리시 기재 필요.",
+    "blockAt": "BEFORE_PUBLISH",
+    "ownerRole": "유키"
+  },
+  {
+    "code": "JP-04",
+    "label": "약기법 · 의료광고 가이드라인",
+    "detail": "제3·6·7화 뷰티·클리닉 회차. 효과효능 표현 불가, 시술 전후 비교 표현 원칙 불가. 촬영 전 표현집 작성 필수.",
+    "blockAt": "BEFORE_PUBLISH",
+    "ownerRole": "유키",
+    "appliesToEpisodes": [3, 6, 7],
+    "mandatory": true
+  },
+  {
+    "code": "JP-05",
+    "label": "초상권 · 저작권",
+    "detail": "협력 매장 스태프 초상 사용 동의, 매장명 노출 범위, BGM 라이선스. 촬영 전 동의서 취득.",
+    "blockAt": "AT_LAUNCH",
+    "ownerRole": "유코"
+  },
+  {
+    "code": "JP-06",
+    "label": "AI 생성물 표시",
+    "detail": "플랫폼마다 AI 생성 라벨 필요 여부가 다름. 각 채널 정책 확인 후 설명란 기재.",
+    "blockAt": "AT_LAUNCH",
+    "ownerRole": "유코"
+  },
+  {
+    "code": "JP-07",
+    "label": "LINE 발송 한도",
+    "detail": "무료 플랜은 월 발송 통수 상한이 있어 주간 발송에는 유료 플랜 필요. 계약 시 최신 조건 확인.",
+    "blockAt": "AT_LAUNCH",
+    "ownerRole": "유키"
+  }
+]
+

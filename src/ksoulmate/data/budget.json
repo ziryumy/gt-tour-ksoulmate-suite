@@ -1,0 +1,68 @@
+{
+  "currency": {
+    "assumedKrwPerUsd": 1400,
+    "note": "가정 환율. 실제 청구액과 다를 수 있음"
+  },
+  "plans": {
+    "claude": [
+      { "name": "Pro", "usdMonthly": 20, "usdAnnual": 17, "note": "대본·현지화. Claude Code 포함" },
+      { "name": "Max 5x", "usdMonthly": 100, "usdAnnual": null, "note": "대량 배치·에이전트 운용 시" },
+      { "name": "Team Standard", "usdMonthly": 20, "usdAnnual": null, "unit": "seat", "note": "2석 권장" }
+    ],
+    "higgsfield": [
+      { "name": "Starter", "usdMonthly": 19, "usdAnnual": 19, "credits": 270, "note": "Seedance 2.0·2.5 접근 불가" },
+      { "name": "Plus", "usdMonthly": 59, "usdAnnual": 47, "credits": 1200, "note": "전체 모델" },
+      { "name": "Ultra", "usdMonthly": 129, "usdAnnual": 99, "credits": 3000, "note": "전체 모델" }
+    ]
+  },
+  "generation": {
+    "adoptionRate": 0.75,
+    "perOutput": {
+      "short3ch":  { "uniqueCuts": 44, "generations": 59, "retries": 2, "total": 61 },
+      "engagement": { "uniqueCuts": 12, "generations": 16, "retries": 2, "total": 18 },
+      "longForm":  { "uniqueCuts": 70, "generations": 94, "retries": 6, "total": 100 }
+    }
+  },
+  "monthlyPlan": {
+    "shortPerMonth": 4,
+    "engagementPerMonth": 4,
+    "longPerMonth": 1,
+    "totalGenerations": 416,
+    "estimatedCredits": 9400
+  },
+  "scenarios": [
+    { "key": "A", "label": "절약", "model": "Fast·Mini급, 480~720p, 컷 수 축소", "generations": 280, "credits": 4700, "usdMin": 99, "usdMax": 160 },
+    { "key": "B", "label": "표준", "model": "Seedance 2.0급, 720~1080p", "generations": 416, "credits": 9400, "usdMin": 310, "usdMax": 310 },
+    { "key": "C", "label": "안전", "model": "Seedance 2.5, 1080p + audio", "generations": 416, "credits": 14000, "usdMin": 450, "usdMax": null }
+  ],
+  "monthlyBudget": {
+    "higgsfieldCreditsUsd": 310,
+    "claudeUsd": 40,
+    "claudeSeats": 2,
+    "totalUsd": 350,
+    "annualUsd": 4200,
+    "totalKrw": 490000
+  },
+  "labour": {
+    "short3chHours": 15.7,
+    "engagementHours": 4.5,
+    "longFormHoursPerWeek": 5.1,
+    "weeklyTotalHours": 25.3,
+    "weeklyBudgetHours": 26,
+    "oneTimeSetupHours": {
+      "voiceProfiles": 4.0,
+      "bgmLibrary": 4.5,
+      "templates": 2.0,
+      "characterId": 2.0,
+      "total": 12.5
+    }
+  },
+  "notes": [
+    "크레딧은 이월되지 않음. 월 단위 리셋",
+    "Starter로는 Seedance 2.0·2.5 접근 불가 — 어떤 크레딧을 사도 안 됨",
+    "무료 플랜 없음. $3 일회성 40 크레딧 + 3일 MCP 체험으로 사전 검증",
+    "공식 블로그: Seedance 2.5는 클립 1개당 3~5회 시도 필요, 30클립 기준 월 $324~540",
+    "첫 4주는 Ultra 하나로 실측 후 시나리오 확정"
+  ]
+}
+

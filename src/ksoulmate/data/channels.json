@@ -1,0 +1,56 @@
+[
+  {
+    "code": "JP",
+    "label": "일본 · LINE / YouTube JP",
+    "narratorId": "M4",
+    "tone": "일기체 · 1인칭 · 과거 회상",
+    "totalSec": 90,
+    "cutCount": 24,
+    "avgCutSec": 3.8,
+    "rhythmBasis": "문장 호흡 — 나레이션 대본이 컷 길이를 정한다",
+    "workflowOrder": ["script", "vo", "cut", "bgm", "subtitle", "publish"],
+    "bgmTracks": ["jp-01-piano-room", "jp-02-piano-soft", "jp-03-strings-pad"],
+    "active": true
+  },
+  {
+    "code": "US",
+    "label": "미국 · TikTok / Reels",
+    "narratorId": "M2",
+    "tone": "비트체 · 현재형 · 구어",
+    "totalSec": 60,
+    "cutCount": 32,
+    "avgCutSec": 1.9,
+    "rhythmBasis": "비트 — BGM 타임라인에 먼저 컷을 맞춘다",
+    "workflowOrder": ["bgm", "cut", "vo", "subtitle", "publish"],
+    "bgmTracks": ["us-01-boombap-96", "us-02-trap-92", "us-03-drill-100"],
+    "active": true
+  },
+  {
+    "code": "KR",
+    "label": "한국 · Instagram",
+    "narratorId": "M1",
+    "tone": "담백체 · 정보 전달",
+    "totalSec": 90,
+    "cutCount": 18,
+    "avgCutSec": 5.0,
+    "rhythmBasis": "자막 가독 — 자막 읽는 시간이 컷 최소 길이",
+    "workflowOrder": ["subtitle", "cut", "vo", "bgm", "publish"],
+    "bgmTracks": ["kr-01-lofi-bright", "kr-02-upbeat-85", "kr-03-soft-pop"],
+    "active": true
+  },
+  {
+    "code": "CN",
+    "label": "중화권 · 샤오홍슈",
+    "narratorId": "M3",
+    "tone": "감성체 · 짧은 문장",
+    "totalSec": 88,
+    "cutCount": 22,
+    "avgCutSec": 4.0,
+    "rhythmBasis": "하단 자막 영역 확보 우선",
+    "workflowOrder": ["subtitle", "cut", "vo", "bgm", "publish"],
+    "bgmTracks": ["cn-01-citypop-90", "cn-02-citypop-soft", "cn-03-ambient"],
+    "active": false,
+    "note": "2분기 개시. 小红书는 중국 본토 실명인증·중국 휴대번호 필요, 파트너 경유 개설"
+  }
+]
+
