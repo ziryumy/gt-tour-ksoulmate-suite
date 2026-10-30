@@ -9,8 +9,15 @@ import type {
   Origin,
   OriginStatus,
   Season2Episode,
+  SnsEpisode,
+  SnsStatus,
 } from "./types";
-import { EPISODE_STATUS_ORDER, ORIGIN_STATUS_ORDER } from "./types";
+import {
+  EPISODE_STATUS_ORDER,
+  ORIGIN_STATUS_ORDER,
+  SNS_STATUS_ORDER,
+} from "./types";
+import { SNS_BANNED_WORDS } from "./snsSeed";
 
 /**
  * 1. 길이 검증 규칙 (SPEC 5.1)
@@ -431,4 +438,76 @@ export function canAdvanceSeason2Episode(input: {
     reason: null,
   };
 }
+
+/**
+ * 7. M7 SNS 연재 18편 금지어 15개 스캔 및 발행 게이트 (REL-01~06 · 6비트 · 금지어 차단)
+ */
+export function scanSnsBannedWords(text: string): string[] {
+  if (!text) return [];
+  return SNS_BANNED_WORDS.filter((word) => text.includes(word));
+}
+
+export function canAdvanceSns(input: {
+  sns: SnsEpisode;
+  targetStatus: SnsStatus;
+}): {
+  ok: boolean;
+  reason: string | null;
+} {
+  const { sns, targetStatus } = input;
+  const targetIdx = SNS_STATUS_ORDER.indexOf(targetStatus);
+  const cardReadyIdx = SNS_STATUS_ORDER.indexOf("CARD_READY");
+  const reviewedIdx = SNS_STATUS_ORDER.indexOf("REVIEWED");
+
+  // 1) CARD_READY 이상 진입 시 6비트(hook→block→appear→solve→sos→ask) 완료 확인
+  if (targetIdx >= cardReadyIdx) {
+    const incompleteBeats = sns.beats.filter((b) => !b.done);
+    if (incompleteBeats.length > 0) {
+      return {
+        ok: false,
+        reason: `6비트 타임라인 미완료(${incompleteBeats
+          .map((b) => b.code.toUpperCase())
+          .join(", ")}) — 6개 비트를 모두 확정해야 카드완성/검수/발행 단계로 이동할 수 있습니다.`,
+      };
+    }
+  }
+
+  // 2) REVIEWED 또는 PUBLISHED 진입 시 무슬림 종교 묘사 규칙(REL-01~06) 전수 체크 확인 (I1~I3)
+  if (sns.isMuslimEpisode && targetIdx >= reviewedIdx) {
+    const incompleteRel = sns.muslimChecks.filter((c) => !c.done);
+    if (incompleteRel.length > 0) {
+      return {
+        ok: false,
+        reason: `[무슬림 종교 묘사 게이트 차단] ${incompleteRel
+          .map((c) => c.code)
+          .join(", ")} 미완료 — 아이만 종교 에피소드(${
+          sns.code
+        })는 REL-01~06 6개 규칙을 모두 통과해야 검수/발행할 수 있습니다.`,
+      };
+    }
+  }
+
+  // 3) REVIEWED 또는 PUBLISHED 진입 시 3채널 원고(IG/X/LINE) 및 카드 텍스트 내 금지어 15개 검출 차단
+  if (targetIdx >= reviewedIdx) {
+    const allTexts = [
+      sns.card.headline,
+      sns.card.problemText,
+      sns.card.solutionTip,
+      sns.card.jihuQuote,
+      ...sns.channelCopies.map((c) => c.copyText),
+    ].join(" ");
+    const detected = scanSnsBannedWords(allTexts);
+    if (detected.length > 0) {
+      return {
+        ok: false,
+        reason: `[SNS 과장·홍보 금지어 차단] 원고/카드에 금지어(${detected.join(
+          ", "
+        )})가 포함되어 있습니다. 담백한 생활 기록 톤으로 수정하세요.`,
+      };
+    }
+  }
+
+  return { ok: true, reason: null };
+}
+
 

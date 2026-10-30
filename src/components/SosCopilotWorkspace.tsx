@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { GoogleGenAI, Type } from '@google/genai';
 import { sanitizeTextWithGuardrails } from '../engine/guardrails';
 import { type TargetLang } from '../engine/schema';
 import {
@@ -158,7 +157,7 @@ export default function SosCopilotWorkspace({
     onTriggerToast(`[${pat.code}] "${pat.titleKo}" 매크로 템플릿이 적용되었습니다.`);
   };
 
-  // @google/genai (gemini-2.5-flash) 기반 맞춤형 3단계 수익 전환 답장 정밀 생성
+  // 서버 (/api/sos-copilot-generate) 또는 클라이언트 SDK + 스마트 매크로 폴백 기반 3단계 수익 전환 답장 정밀 생성
   const handleGenerateWithGeminiFlash = async () => {
     const cleanQ = sanitizeTextWithGuardrails(questionInput).sanitizedText;
     if (!cleanQ.trim()) {
@@ -168,63 +167,74 @@ export default function SosCopilotWorkspace({
 
     setAiGenerating(true);
     try {
-      const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-      if (!apiKey) {
-        throw new Error('GEMINI_API_KEY가 없어 스마트 매크로 엔진으로 즉시 전환합니다.');
-      }
+      let parsedData: {
+        stage1_empathy_tip?: string;
+        stage2_pass_pitch?: string;
+        stage3_checkout_cta?: string;
+      } | null = null;
 
-      const ai = new GoogleGenAI({ apiKey });
-      const langLabelMap: Record<TargetLang, string> = {
-        JP: 'Japanese (Polite, reassuring native Tokyo concierge tone)',
-        EN: 'English (Warm, insider Seoul travel concierge tone)',
-        CN: 'Simplified Chinese (Friendly, helpful Xiaohongshu/WeChat butler tone)',
-        KR: 'Korean (Polite, professional VIP concierge tone)'
-      };
-
-      const passTitle = currentPassSpec.titles[lang];
-      const passPitchRef = currentPassSpec.pitchLines[lang];
-      const passCheckoutRef = currentPassSpec.selfCheckoutLines[lang];
-
-      const prompt = `You are GT TOUR Korea's Inbound SOS Revenue Conversion Copilot.
-A foreign traveler or K-POP fan left the following comment/DM question:
-"${cleanQ}"
-
-Target Language: ${langLabelMap[lang]}
-Selected Pre-secured Revenue Pass: ${passTitle}
-Reference Pass Pitch: ${passPitchRef}
-Reference Self-Checkout CTA: ${passCheckoutRef}
-
-Generate a 3-stage zero-labor revenue conversion reply in ${langLabelMap[lang]}:
-1. stage1_empathy_tip: Warm native empathy + a 100% actionable self-help local tip (specific subway exit, walking route, app tip, or timing trick in Seoul) so the customer gets immediate value without needing extra staff chat.
-2. stage2_pass_pitch: Propose the pre-secured pass ("${passTitle}") with the tone: "Instead of struggling on-site in real time, lock in a pre-secured GT TOUR dedicated slot in advance." Never promise illegal ticket scalping or medical treatment guarantees.
-3. stage3_checkout_cta: Guide the customer to choose their date and complete self-checkout directly without long back-and-forth DM chats, and MUST include the exact link: ${PRE_SECURED_PASS_LINK}`;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              stage1_empathy_tip: { type: Type.STRING },
-              stage2_pass_pitch: { type: Type.STRING },
-              stage3_checkout_cta: { type: Type.STRING }
-            },
-            required: ['stage1_empathy_tip', 'stage2_pass_pitch', 'stage3_checkout_cta']
+      try {
+        const response = await fetch('/api/sos-copilot-generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question: cleanQ,
+            lang,
+            passTitle: currentPassSpec.titles[lang],
+            passPitchRef: currentPassSpec.pitchLines[lang],
+            passCheckoutRef: currentPassSpec.selfCheckoutLines[lang],
+            passLink: PRE_SECURED_PASS_LINK
+          })
+        });
+        if (response.ok) {
+          const parsed = await response.json();
+          if (parsed?.ok) {
+            parsedData = parsed;
           }
         }
-      });
+      } catch {
+        // 정적 배포 환경(Vercel)에서는 클라이언트 SDK 또는 스마트 매크로 폴백으로 전환
+      }
 
-      const parsed = JSON.parse(response.text || '{}');
+      if (!parsedData) {
+        const clientKey =
+          (typeof window !== 'undefined' && window.localStorage.getItem('GT_GEMINI_API_KEY')) ||
+          (import.meta as any).env?.VITE_GEMINI_API_KEY ||
+          '';
+
+        if (clientKey) {
+          const { GoogleGenAI } = await import('@google/genai');
+          const ai = new GoogleGenAI({ apiKey: clientKey });
+          const prompt = `Create a 3-stage concierge conversion reply in language [${lang}] for a foreign K-pop/Seoul traveler asking: "${cleanQ}".
+Target Pass: ${currentPassSpec.titles[lang]}
+Pitch Reference: ${currentPassSpec.pitchLines[lang]}
+Checkout Reference: ${currentPassSpec.selfCheckoutLines[lang]}
+Link: ${PRE_SECURED_PASS_LINK}
+Respond strictly in JSON with keys: stage1_empathy_tip, stage2_pass_pitch, stage3_checkout_cta.`;
+
+          const genRes = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: { responseMimeType: 'application/json' }
+          });
+          if (genRes.text) {
+            parsedData = JSON.parse(genRes.text);
+          }
+        }
+      }
+
+      if (!parsedData) {
+        throw new Error('Fallback to Smart Macro Engine');
+      }
+
       const s1 = sanitizeTextWithGuardrails(
-        parsed.stage1_empathy_tip || conversionResult.stage1_empathy_tip
+        parsedData.stage1_empathy_tip || conversionResult.stage1_empathy_tip
       ).sanitizedText;
       const s2 = sanitizeTextWithGuardrails(
-        parsed.stage2_pass_pitch || conversionResult.stage2_pass_pitch
+        parsedData.stage2_pass_pitch || conversionResult.stage2_pass_pitch
       ).sanitizedText;
       let s3 = sanitizeTextWithGuardrails(
-        parsed.stage3_checkout_cta || conversionResult.stage3_checkout_cta
+        parsedData.stage3_checkout_cta || conversionResult.stage3_checkout_cta
       ).sanitizedText;
       if (!s3.includes(PRE_SECURED_PASS_LINK)) {
         s3 = `${s3} 👉 ${PRE_SECURED_PASS_LINK}`;
@@ -244,7 +254,7 @@ Generate a 3-stage zero-labor revenue conversion reply in ${langLabelMap[lang]}:
       saveToSosSmartCache(makeSosCacheKey(cleanQ, lang, selectedPassId), nextResult);
       onTriggerToast('Gemini 2.5 Flash 기반 3단계 수익 전환 답장이 생성 및 스마트 캐시에 저장되었습니다.');
     } catch (_err: any) {
-      // 에러 또는 쿼터 제한 시 즉시 50대 매크로 엔진으로 무중단 응답
+      // 에러, 정적 호스팅 또는 쿼터 제한 시 즉시 50대 매크로 엔진으로 무중단 응답
       const fallback = matchSosMacroPattern({
         question: cleanQ,
         lang,

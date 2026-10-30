@@ -31,6 +31,7 @@ import {
   ZoomIn,
   Upload,
   Grid,
+  MessageCircle,
 } from "lucide-react";
 import {
   type ConsoleStoreState,
@@ -71,18 +72,25 @@ import {
   saveStore,
   COMPOSITE_ANIME_SHEET_URL,
   DEFAULT_MEMBER_ANIME_SHEETS,
+  KSOULMATE_SCHEMA_V4_MEME_PERSONA,
 } from "./seedData";
 import {
   INITIAL_RELEASE_PHASES,
   INITIAL_SEASON2_DEVICES,
   INITIAL_SEASON2_EPISODES,
 } from "./season2Seed";
+import { SnsModuleView } from "./SnsModuleView";
+import { PersonaChatSimulator } from "./PersonaChatSimulator";
 
 type RouteView =
+  | { page: "personaChat" }
   | { page: "dashboard" }
   | { page: "members" }
   | { page: "origins" }
   | { page: "originDetail"; originNo: number }
+  | { page: "sns" }
+  | { page: "snsDetail"; snsNo: number }
+  | { page: "snsCard"; snsNo: number }
   | { page: "episodes" }
   | { page: "episodeDetail"; episodeNo: number; channelCode?: string }
   | { page: "channelEdit"; episodeNo: number; channelCode: string }
@@ -343,6 +351,13 @@ export default function App({
 } = {}) {
   const [store, setStore] = useState<ConsoleStoreState>(() => loadStore());
   const [route, setRoute] = useState<RouteView>({ page: "dashboard" });
+  const [viewMode, setViewMode] = useState<"FULL" | "TAB">("FULL");
+  const [fullViewOriginNo, setFullViewOriginNo] = useState<number>(1);
+  const [fullViewSnsNo, setFullViewSnsNo] = useState<number>(16);
+  const [fullViewEpisodeNo, setFullViewEpisodeNo] = useState<number>(1);
+  const [fullViewChannelCode, setFullViewChannelCode] = useState<string>("JP");
+  const [fullViewSeason2Code, setFullViewSeason2Code] =
+    useState<Season2Episode["code"]>("B1");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // 멤버 상세 모달 상태
@@ -371,10 +386,96 @@ export default function App({
     viewMode: "QUADRANT" | "FULL_SHEET";
   } | null>(null);
 
+  // 구버전 localStorage 시드 데이터 강제 마이그레이션 (KSOULMATE_SCHEMA_V4_MEME_PERSONA)
+  useEffect(() => {
+    try {
+      const hasV4Key =
+        window.localStorage.getItem(KSOULMATE_SCHEMA_V4_MEME_PERSONA) === "true";
+      const isStaleData =
+        !hasV4Key ||
+        store.episodes?.[0]?.title !== "영하 5도에 아이스를 마시는 이유" ||
+        !store.members?.[0]?.domainAnchorBadge;
+      if (isStaleData) {
+        const seeded = createInitialSeedState();
+        setStore(seeded);
+        saveStore(seeded);
+        window.localStorage.setItem(KSOULMATE_SCHEMA_V4_MEME_PERSONA, "true");
+        setViewMode("FULL");
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
+
   // 상태 변경 시 localStorage 영속화
   useEffect(() => {
     saveStore(store);
   }, [store]);
+
+  // route 변경 시 Full View 내 상세 패널 상태 동기화 및 자동 스크롤
+  useEffect(() => {
+    if (route.page === "originDetail") {
+      setFullViewOriginNo(route.originNo);
+      if (viewMode === "FULL") {
+        document
+          .getElementById("ks-section-origins-detail")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } else if (route.page === "snsDetail" || route.page === "snsCard") {
+      setFullViewSnsNo(route.snsNo);
+      if (viewMode === "FULL") {
+        document
+          .getElementById("ks-section-sns")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } else if (route.page === "episodeDetail") {
+      setFullViewEpisodeNo(route.episodeNo);
+      if (route.channelCode) setFullViewChannelCode(route.channelCode);
+      if (viewMode === "FULL") {
+        document
+          .getElementById("ks-section-episodes-detail")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } else if (route.page === "channelEdit") {
+      setFullViewEpisodeNo(route.episodeNo);
+      setFullViewChannelCode(route.channelCode);
+      if (viewMode === "FULL") {
+        document
+          .getElementById("ks-section-episodes-editor")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } else if (route.page === "season2Detail") {
+      setFullViewSeason2Code(route.code);
+      if (viewMode === "FULL") {
+        document
+          .getElementById("ks-section-season2-detail")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }, [route, viewMode]);
+
+  const handleNavClick = (
+    pageKey:
+      | "personaChat"
+      | "dashboard"
+      | "members"
+      | "origins"
+      | "sns"
+      | "episodes"
+      | "season2"
+      | "credits"
+      | "compliance"
+      | "engagement"
+  ) => {
+    setRoute({ page: pageKey });
+    if (viewMode === "FULL") {
+      setTimeout(() => {
+        document
+          .getElementById(`ks-section-${pageKey}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 30);
+    }
+  };
 
   const handleUpdateMemberAnimeSheet = (
     memberId: string,
@@ -564,6 +665,12 @@ export default function App({
     const seeded = createInitialSeedState();
     setStore(seeded);
     saveStore(seeded);
+    try {
+      window.localStorage.setItem(KSOULMATE_SCHEMA_V4_MEME_PERSONA, "true");
+    } catch {
+      // ignore
+    }
+    setViewMode("FULL");
     setStatusErrors({});
     setOriginStatusErrors({});
     setSeason2StatusErrors({});
@@ -665,27 +772,39 @@ export default function App({
 
   const navItems = [
     {
+      key: "personaChat" as const,
+      label: "1:1 AI 페르소나 라이브톡",
+      subLabel: "체험형 IP · 밈 롤플레잉 · SOS",
+      icon: MessageCircle,
+    },
+    {
       key: "dashboard" as const,
       label: "대시보드",
-      subLabel: "오늘 할 일 · 요약",
+      subLabel: "M1·M2 오늘 할 일 · 요약",
       icon: LayoutDashboard,
     },
     {
       key: "members" as const,
       label: "캐릭터 락",
-      subLabel: "5인 시트 · 프롬프트",
+      subLabel: "M2 5인 시트 · 프롬프트",
       icon: Users,
     },
     {
       key: "origins" as const,
       label: "오리진 5편",
-      subLabel: "데뷔 전 서사 · 애니",
+      subLabel: "M6 데뷔 전 서사 · 애니",
       icon: Sparkles,
+    },
+    {
+      key: "sns" as const,
+      label: "SNS 연재 18편",
+      subLabel: "M7 서울 적응 · 카드 · 양방향",
+      icon: FileText,
     },
     {
       key: "episodes" as const,
       label: "시즌 1 (12화)",
-      subLabel: "서울 적응 · 4채널",
+      subLabel: "M2~M4 서울 적응 · 4채널",
       icon: Film,
     },
     {
@@ -697,19 +816,19 @@ export default function App({
     {
       key: "credits" as const,
       label: "크레딧",
-      subLabel: "월 예산 · 채택률",
+      subLabel: "M3 월 예산 · 채택률",
       icon: Coins,
     },
     {
       key: "compliance" as const,
       label: "컴플라이언스",
-      subLabel: "일본 7항목 · 약기법",
+      subLabel: "M4 일본 7항목 · 약기법",
       icon: ShieldAlert,
     },
     {
       key: "engagement" as const,
       label: "참여",
-      subLabel: "게이지 · 팬덤명 · 미션",
+      subLabel: "M4 게이지 · 팬덤명 · 미션",
       icon: HeartHandshake,
     },
   ];
@@ -717,6 +836,13 @@ export default function App({
   const isNavActive = (key: string) => {
     if (key === "origins") {
       return route.page === "origins" || route.page === "originDetail";
+    }
+    if (key === "sns") {
+      return (
+        route.page === "sns" ||
+        route.page === "snsDetail" ||
+        route.page === "snsCard"
+      );
     }
     if (key === "episodes") {
       return (
@@ -1017,9 +1143,10 @@ export default function App({
           </div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-[11px] text-zinc-500">
-              Members {store.members.length} · Episodes {store.episodes.length} ·
-              Channels {store.channels.length} · Origins{" "}
-              {(store.origins ?? []).length}
+              Members {store.members.length} · Origins{" "}
+              {(store.origins ?? []).length} · SNS{" "}
+              {(store.snsEpisodes ?? []).length || 18} · Episodes{" "}
+              {store.episodes.length} · Channels {store.channels.length}
             </span>
             <button
               type="button"
@@ -1553,6 +1680,47 @@ export default function App({
           </div>
         </section>
 
+        {/* 5인조 기능적 분합 — 5대 페인포인트 도메인 앵커(Domain Anchor) 마스터 보드 */}
+        <section className="rounded-[8px] border-2 border-[#1F5E63]/35 bg-[#1F5E63]/5 p-3.5 text-xs space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="rounded-[3px] bg-[#1F5E63] px-2 py-0.5 font-mono text-[11px] font-bold text-white">
+                5인조 기능적 분합 · 5대 도메인 앵커
+              </span>
+              <span className="font-bold text-zinc-900">
+                단순 보컬/댄서 포지션을 넘어 외국인 핵심 페인포인트 5대 영역을 전담 해결하는 기능적 앵커 배정
+              </span>
+            </div>
+            <span className="font-mono text-[11px] text-[#1F5E63] font-semibold">
+              50대 매크로 지식 & 1:1 AI 페르소나 연동 완료
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            {orderedMembers.map((m) => (
+              <div
+                key={`anchor-${m.id}`}
+                onClick={() => setSelectedMember(m)}
+                className="cursor-pointer rounded-[6px] border border-[#1F5E63]/30 bg-white p-2.5 space-y-1 hover:border-[#1F5E63] transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-zinc-900">
+                    {m.id} {m.nameKo} ({m.nationality})
+                  </span>
+                  <span className="font-mono text-[10px] text-zinc-500">
+                    {m.position}
+                  </span>
+                </div>
+                <div className="rounded-[3px] bg-[#1F5E63] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {m.domainAnchorBadge}
+                </div>
+                <p className="text-[11px] leading-snug text-zinc-700">
+                  {m.domainAnchorDesc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
           {orderedMembers.map((member) => (
             <div
@@ -1633,6 +1801,19 @@ export default function App({
                       {member.age}세 · {member.heightCm}cm
                     </span>
                   </div>
+
+                  {/* 외국인 핵심 페인포인트 도메인 앵커 배지 & 전문 해결 영역 */}
+                  {member.domainAnchorBadge && (
+                    <div className="mt-2.5 rounded-[6px] border border-[#1F5E63]/30 bg-[#1F5E63]/5 p-2.5 space-y-1">
+                      <div className="inline-block rounded-[3px] bg-[#1F5E63] px-2 py-0.5 text-[11px] font-bold text-white">
+                        {member.domainAnchorBadge}
+                      </div>
+                      <p className="text-xs font-medium text-zinc-800 leading-snug">
+                        {member.domainAnchorDesc}
+                      </p>
+                    </div>
+                  )}
+
                   <p className="mt-2 line-clamp-1 font-mono text-[11px] text-zinc-500">
                     의상: {member.outfitSpec}
                   </p>
@@ -1668,13 +1849,23 @@ export default function App({
                       <option value="NONE">미제작 (NONE)</option>
                     </select>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMember(member)}
-                    className="font-semibold text-[#1F5E63] hover:underline"
-                  >
-                    상세 · 시트 설정 열기 →
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleNavClick("personaChat")}
+                      className="inline-flex items-center gap-1 rounded-[3px] bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-emerald-700"
+                    >
+                      <MessageCircle className="h-3 w-3" />
+                      <span>1:1 라이브톡</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMember(member)}
+                      className="font-semibold text-[#1F5E63] hover:underline"
+                    >
+                      상세 · 시트 설정 열기 →
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1693,10 +1884,10 @@ export default function App({
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-3">
           <div>
             <h1 className="text-base font-bold text-zinc-900">
-              에피소드 보드 (시즌1 · 12화)
+              에피소드 보드 (시즌1 · 12화 — 좌충우돌 공감 서사 & K-밈/슬랭/실전 뉘앙스 개편)
             </h1>
             <p className="text-xs text-zinc-500">
-              12화의 제작 단계(버튼/드롭다운 이동), 담당 멤버, 오늘의 한국어 3표현 및 4채널 진행 현황을 관리합니다.
+              지루한 교과서 문장을 전면 폐기하고, 5인의 좌충우돌 서울 생존 서사 속에서 K-밈·슬랭·실전 뉘앙스·로컬 생존 팁을 자연스럽게 체득하도록 설계했습니다.
             </p>
           </div>
           <div className="flex items-center gap-2 text-[11px] text-zinc-500">
@@ -1715,19 +1906,36 @@ export default function App({
           </div>
         </div>
 
+        {/* 교육용 콘텐츠의 함정 탈피 핵심 연출 원칙 배너 */}
+        <div
+          role="note"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-[8px] border-2 border-amber-400 bg-amber-50 px-4 py-3 text-xs text-amber-950 shadow-2xs"
+        >
+          <div className="flex items-center gap-2 font-bold">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+            <span>
+              [⚡ 핵심 연출 원칙: 교육을 목적으로 하지 마라! 좌충우돌 공감 서사(Narrative)의 부산물로 K-밈·슬랭·실전 생존 뉘앙스를 얻어가게 할 것]
+            </span>
+          </div>
+          <span className="rounded-[3px] bg-amber-900 px-2 py-0.5 font-mono text-[10px] font-bold text-white">
+            교과서 문장 100% 폐기 완료
+          </span>
+        </div>
+
         {/* 데스크톱 테이블 */}
         <div className="hidden md:block overflow-x-auto rounded-[8px] border border-zinc-200 bg-white">
           <table className="w-full border-collapse text-left text-xs">
             <thead>
               <tr className="border-b border-zinc-200 bg-zinc-50 text-[11px] font-semibold text-zinc-600">
                 <th className="px-3 py-2.5 w-14">화</th>
-                <th className="px-3 py-2.5">제목</th>
-                <th className="px-3 py-2.5">장소</th>
-                <th className="px-3 py-2.5 w-24">담당</th>
-                <th className="px-3 py-2.5">오늘의 표현 (3개)</th>
-                <th className="px-3 py-2.5 w-56">상태 이동 (버튼/드롭다운)</th>
-                <th className="px-3 py-2.5 w-44">채널 진행 (4개 점)</th>
-                <th className="px-3 py-2.5 w-44 text-right">스튜디오 브릿지</th>
+                <th className="px-3 py-2.5 w-64">좌충우돌 공감 에피소드 (상황)</th>
+                <th className="px-3 py-2.5 w-28">담당 · 도메인</th>
+                <th className="px-3 py-2.5">
+                  서사의 부산물: K-밈/슬랭 + 실전 뉘앙스 + 로컬 생존 팁
+                </th>
+                <th className="px-3 py-2.5 w-52">상태 이동 (버튼/드롭다운)</th>
+                <th className="px-3 py-2.5 w-40">채널 진행 (4개 점)</th>
+                <th className="px-3 py-2.5 w-40 text-right">스튜디오 브릿지</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200">
@@ -1740,7 +1948,7 @@ export default function App({
                       ep.complianceRisk ? "bg-amber-50/70" : "bg-white"
                     }`}
                   >
-                    <td className="px-3 py-2.5 font-mono font-bold text-zinc-900">
+                    <td className="px-3 py-3 font-mono font-bold text-zinc-900 align-top">
                       <button
                         type="button"
                         onClick={() =>
@@ -1751,49 +1959,86 @@ export default function App({
                         제{ep.no}화
                       </button>
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-3 align-top">
                       <button
                         type="button"
                         onClick={() =>
                           setRoute({ page: "episodeDetail", episodeNo: ep.no })
                         }
-                        className="inline-flex items-center gap-1.5 font-semibold text-zinc-900 hover:text-[#1F5E63] hover:underline text-left"
+                        className="inline-flex flex-wrap items-center gap-1.5 font-bold text-zinc-900 hover:text-[#1F5E63] hover:underline text-left"
                       >
                         <span>{ep.title}</span>
                         {ep.complianceRisk && (
                           <Badge variant="amber">약기법</Badge>
                         )}
                       </button>
-                    </td>
-                    <td className="px-3 py-2.5 text-zinc-600">{ep.place}</td>
-                    <td className="px-3 py-2.5">
-                      {member ? (
-                        <span className="font-medium text-zinc-800">
-                          {member.nameKo}{" "}
-                          <span className="font-mono text-[10px] text-zinc-400">
-                            ({member.id})
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="text-zinc-500">5인 전원</span>
+                      <div className="mt-0.5 text-[11px] font-semibold text-[#1F5E63]">
+                        📍 {ep.place}
+                      </div>
+                      {ep.narrativeSituation && (
+                        <p className="mt-1 text-[11px] leading-snug text-zinc-600">
+                          {ep.narrativeSituation}
+                        </p>
                       )}
                     </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex flex-wrap gap-1">
-                        {ep.expressions.map((expr, i) => (
-                          <span
-                            key={i}
-                            className="rounded-[2px] border border-zinc-200 bg-white/80 px-1.5 py-0.5 text-[11px] text-zinc-700"
-                          >
-                            {expr}
+                    <td className="px-3 py-3 align-top">
+                      {member ? (
+                        <div className="space-y-1">
+                          <div className="font-bold text-zinc-900">
+                            {member.nameKo}{" "}
+                            <span className="font-mono text-[10px] text-zinc-500">
+                              ({member.id})
+                            </span>
+                          </div>
+                          {member.domainAnchorBadge && (
+                            <div className="rounded-[2px] bg-[#1F5E63]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#1F5E63]">
+                              {member.domainAnchorBadge.replace(/\[|\]/g, "")}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <span className="font-bold text-zinc-900">
+                            5인 전원
                           </span>
-                        ))}
+                          <div className="rounded-[2px] bg-zinc-900 px-1.5 py-0.5 text-[10px] font-semibold text-white w-fit">
+                            5대 앵커 총출동
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 align-top">
+                      <div className="space-y-1">
+                        {ep.kMemeSlang ? (
+                          <>
+                            <div className="rounded-[3px] border border-rose-200 bg-rose-50/80 px-2 py-1 text-[11px] font-bold text-rose-900">
+                              {ep.kMemeSlang}
+                            </div>
+                            <div className="rounded-[3px] border border-[#1F5E63]/30 bg-[#1F5E63]/5 px-2 py-1 text-[11px] font-semibold text-zinc-900">
+                              {ep.realNuance}
+                            </div>
+                            <div className="rounded-[3px] border border-emerald-200 bg-emerald-50/70 px-2 py-1 text-[11px] font-medium text-emerald-950">
+                              {ep.survivalTip}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-wrap gap-1">
+                            {ep.expressions.map((expr, i) => (
+                              <span
+                                key={i}
+                                className="rounded-[2px] border border-zinc-200 bg-white/80 px-1.5 py-0.5 text-[11px] text-zinc-700"
+                              >
+                                {expr}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-3 align-top">
                       {renderEpisodeStatusControl(ep.no, ep.status)}
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-3 align-top">
                       <div className="flex items-center gap-1.5">
                         {channelOrder.map((code) => {
                           const ver = store.channelVersions.find(
@@ -1838,7 +2083,7 @@ export default function App({
                         })}
                       </div>
                     </td>
-                    <td className="px-3 py-2.5 text-right">
+                    <td className="px-3 py-3 text-right align-top">
                       {onExportToGtStudio && (
                         <button
                           type="button"
@@ -1899,15 +2144,20 @@ export default function App({
                     {ep.place} ·{" "}
                     {member ? `${member.nameKo} (${member.id})` : "5인 전원"}
                   </div>
+                  {ep.narrativeSituation && (
+                    <p className="mt-1 text-xs text-zinc-600">
+                      {ep.narrativeSituation}
+                    </p>
+                  )}
                 </button>
-                <div className="mt-2 flex flex-wrap gap-1">
+                <div className="mt-2 space-y-1">
                   {ep.expressions.map((expr, i) => (
-                    <span
+                    <div
                       key={i}
-                      className="rounded-[2px] border border-zinc-200 bg-white px-1.5 py-0.5 text-[11px] text-zinc-700"
+                      className="rounded-[2px] border border-zinc-200 bg-white px-2 py-1 text-[11px] text-zinc-800"
                     >
                       {expr}
-                    </span>
+                    </div>
                   ))}
                 </div>
                 {onExportToGtStudio && (
@@ -6892,7 +7142,7 @@ export default function App({
                     key={item.key}
                     type="button"
                     onClick={() => {
-                      setRoute({ page: item.key });
+                      handleNavClick(item.key);
                       setMobileMenuOpen(false);
                     }}
                     className={`flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-xs font-medium transition-colors ${
@@ -6937,11 +7187,11 @@ export default function App({
             콘텐츠 운영 콘솔
           </h1>
           <p className="mt-0.5 text-[11px] text-zinc-500">
-            5인 · 오리진 5편 · 시즌1(12화) · 시즌2(10화)
+            5인 · 오리진 5편 · SNS 18편 · 시즌1(12화) · 시즌2(10화)
           </p>
         </div>
 
-        <nav className="flex-1 space-y-0.5 px-2.5 py-3">
+        <nav className="flex-1 space-y-0.5 px-2.5 py-3 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isNavActive(item.key);
@@ -6949,7 +7199,7 @@ export default function App({
               <button
                 key={item.key}
                 type="button"
-                onClick={() => setRoute({ page: item.key })}
+                onClick={() => handleNavClick(item.key)}
                 className={`flex w-full items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-left text-xs font-medium transition-colors ${
                   active
                     ? "bg-[#1F5E63] text-white"
@@ -6980,7 +7230,7 @@ export default function App({
           <div className="flex items-center justify-between">
             <span>운영 단계</span>
             <span className="font-mono font-semibold text-zinc-700">
-              Phase 0 ~ 4 통합
+              M1 ~ M7 전체 가동
             </span>
           </div>
           <div className="flex items-center justify-between">
@@ -6992,23 +7242,527 @@ export default function App({
 
       {/* 메인 콘텐츠 영역 */}
       <div className="md:pl-56">
-        <main className="mx-auto max-w-6xl px-3.5 py-4 sm:px-5 sm:py-5">
-          {route.page === "dashboard" && renderDashboard()}
-          {route.page === "members" && renderMembers()}
-          {route.page === "origins" && renderOrigins()}
-          {route.page === "originDetail" &&
-            renderOriginDetail(route.originNo)}
-          {route.page === "episodes" && renderEpisodes()}
-          {route.page === "episodeDetail" &&
-            renderEpisodeDetail(route.episodeNo, route.channelCode)}
-          {route.page === "channelEdit" &&
-            renderChannelEditPage(route.episodeNo, route.channelCode)}
-          {route.page === "season2" && renderSeason2()}
-          {route.page === "season2Detail" &&
-            renderSeason2Detail(route.code)}
-          {route.page === "credits" && <CreditsView />}
-          {route.page === "compliance" && renderCompliance()}
-          {route.page === "engagement" && renderEngagement()}
+        <main className="mx-auto max-w-6xl px-3.5 py-4 sm:px-5 sm:py-5 space-y-5">
+          {/* 최상단 뷰 전환 컨트롤 & M1~M7 전체 섹션 퀵 점프 바 */}
+          <div className="sticky top-12 z-20 rounded-[8px] border border-[#1F5E63]/35 bg-white/95 backdrop-blur px-3.5 py-3 shadow-xs space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="rounded-[2px] bg-[#1F5E63] px-2 py-0.5 font-mono text-[11px] font-bold text-white">
+                  M1~M7 MASTER CONSOLE
+                </span>
+                <span className="text-xs font-bold text-zinc-900">
+                  {viewMode === "FULL"
+                    ? "M1~M7 9개 모듈 전체 화면이 단일 스크롤(Full-Page)로 전부 펼쳐져 있습니다"
+                    : "개별 탭 전환 모드 (선택한 1개 모듈만 표시)"}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("FULL")}
+                  className={`rounded-[4px] px-3 py-1.5 text-xs font-bold transition-colors ${
+                    viewMode === "FULL"
+                      ? "bg-[#1F5E63] text-white shadow-2xs"
+                      : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100"
+                  }`}
+                >
+                  🔥 M1~M7 전체 화면 연속 보기 (Full View - Default)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("TAB")}
+                  className={`rounded-[4px] px-3 py-1.5 text-xs font-bold transition-colors ${
+                    viewMode === "TAB"
+                      ? "bg-zinc-900 text-white shadow-2xs"
+                      : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100"
+                  }`}
+                >
+                  🗂️ 개별 탭 전환 보기
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetSeed}
+                  title="구버전 브라우저 캐시를 지우고 V4 최신 데이터(5대 앵커 · K-밈 12화 · 페르소나 톡)로 즉시 초기화합니다"
+                  className="rounded-[4px] border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100 transition-colors"
+                >
+                  🔄 V4 최신 시드 강제 리셋
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 border-t border-zinc-100 pt-2">
+              <span className="text-[11px] font-semibold text-zinc-500 mr-1">
+                {viewMode === "FULL" ? "섹션 바로가기:" : "탭 선택:"}
+              </span>
+              {navItems.map((item, idx) => {
+                const active = isNavActive(item.key);
+                const isPersona = item.key === "personaChat";
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => handleNavClick(item.key)}
+                    className={`rounded-[4px] px-2.5 py-1 text-xs font-semibold transition-colors ${
+                      active
+                        ? "bg-[#1F5E63] text-white"
+                        : isPersona
+                        ? "border-2 border-emerald-500 bg-emerald-50 font-bold text-emerald-900 hover:bg-emerald-100"
+                        : "border border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100"
+                    }`}
+                  >
+                    {isPersona
+                      ? "💬 0. 1:1 AI 페르소나 라이브톡 (체험형 IP)"
+                      : `${idx}. ${item.label}`}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 상단 마스터 배너: 5인조 기능적 분합 (외국인 5대 페인포인트 도메인 앵커) */}
+          <section className="rounded-[10px] border-2 border-[#1F5E63]/35 bg-gradient-to-r from-[#1F5E63]/10 via-white to-emerald-50/60 p-4 shadow-2xs space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-[3px] bg-[#1F5E63] px-2.5 py-0.5 font-mono text-xs font-bold text-white">
+                  5인조 기능적 분합 · DOMAIN ANCHOR
+                </span>
+                <h2 className="text-sm font-bold text-zinc-900">
+                  외국인 5대 페인포인트 도메인 앵커(Domain Anchor) & 공감 서사·체험형 IP 마스터 아키텍처
+                </h2>
+              </div>
+              <span className="rounded-[3px] bg-amber-100 border border-amber-300 px-2 py-0.5 text-[11px] font-bold text-amber-900">
+                ⚡ 교육 목적 함정 탈피 ➔ 좌충우돌 서사 + K-밈/슬랭 + 1:1 라이브톡
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5 text-xs">
+              {store.members.map((m) => (
+                <div
+                  key={`top-anchor-${m.id}`}
+                  onClick={() => setSelectedMember(m)}
+                  className="cursor-pointer rounded-[6px] border border-zinc-200 bg-white p-2.5 hover:border-[#1F5E63] transition-colors space-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-zinc-900">
+                      {m.id} {m.nameKo} ({m.nationality})
+                    </span>
+                    <span className="font-mono text-[10px] text-zinc-400">
+                      {m.position}
+                    </span>
+                  </div>
+                  <div className="rounded-[3px] bg-[#1F5E63] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    {m.domainAnchorBadge}
+                  </div>
+                  <p className="text-[11px] leading-snug text-zinc-600 line-clamp-2">
+                    {m.domainAnchorDesc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {viewMode === "FULL" ? (
+            <div className="space-y-10 pb-16">
+              {/* 섹션 0: 인터랙티브 1:1 AI 페르소나 라이브 채팅 & 여행 SOS 스튜디오 */}
+              <section
+                id="ks-section-personaChat"
+                className="scroll-mt-36 space-y-3 rounded-[10px] border-2 border-emerald-500/40 bg-white p-4 sm:p-5 shadow-2xs"
+              >
+                <PersonaChatSimulator
+                  members={store.members}
+                  onExportToGtStudio={onExportToGtStudio}
+                />
+              </section>
+
+              {/* 섹션 1: M1·M2 대시보드 */}
+              <section
+                id="ks-section-dashboard"
+                className="scroll-mt-36 space-y-3 rounded-[10px] border-2 border-[#1F5E63]/20 bg-white p-4 sm:p-5 shadow-2xs"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-[3px] bg-[#1F5E63] px-2.5 py-0.5 font-mono text-xs font-bold text-white">
+                      섹션 1 · M1·M2 대시보드
+                    </span>
+                    <h2 className="text-sm font-bold text-zinc-900">
+                      긴급 점검 배너 · 4대 핵심 지표 · 이번 주 할 일 11건 · 최근 생성 기록
+                    </h2>
+                  </div>
+                </div>
+                {renderDashboard()}
+              </section>
+
+              {/* 섹션 2: M2 캐릭터 락 */}
+              <section
+                id="ks-section-members"
+                className="scroll-mt-36 space-y-3 rounded-[10px] border-2 border-[#1F5E63]/20 bg-white p-4 sm:p-5 shadow-2xs"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-[3px] bg-[#1F5E63] px-2.5 py-0.5 font-mono text-xs font-bold text-white">
+                      섹션 2 · M2 캐릭터 락 (5인)
+                    </span>
+                    <h2 className="text-sm font-bold text-zinc-900">
+                      한지후(M1)~아이만(M5) 캐릭터 시트 · 2x2 사분면 뷰어 · 프롬프트 복사
+                    </h2>
+                  </div>
+                </div>
+                {renderMembers()}
+              </section>
+
+              {/* 섹션 3: M6 오리진 5편 */}
+              <section
+                id="ks-section-origins"
+                className="scroll-mt-36 space-y-5 rounded-[10px] border-2 border-[#1F5E63]/20 bg-white p-4 sm:p-5 shadow-2xs"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-[3px] bg-[#1F5E63] px-2.5 py-0.5 font-mono text-xs font-bold text-white">
+                      섹션 3 · M6 오리진 5편
+                    </span>
+                    <h2 className="text-sm font-bold text-zinc-900">
+                      데뷔 전 서사 5편 보드 & 8비트(B1~B8) 연출 시트 & SAFE-01~08 안전 게이트
+                    </h2>
+                  </div>
+                </div>
+                {renderOrigins()}
+
+                <div
+                  id="ks-section-origins-detail"
+                  className="scroll-mt-36 space-y-3 border-t-2 border-dashed border-[#1F5E63]/30 pt-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-[6px] border border-[#1F5E63]/30 bg-[#1F5E63]/5 px-3.5 py-2">
+                    <span className="text-xs font-bold text-zinc-900">
+                      오리진 단건 상세 (8비트 B1~B8 연출 시트 & SAFE-01~08 게이트) 바로 보기:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(store.origins ?? []).map((o) => (
+                        <button
+                          key={o.no}
+                          type="button"
+                          onClick={() => setFullViewOriginNo(o.no)}
+                          className={`rounded-[4px] px-2.5 py-1 text-xs font-bold transition-colors ${
+                            fullViewOriginNo === o.no
+                              ? "bg-[#1F5E63] text-white"
+                              : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100"
+                          }`}
+                        >
+                          #{o.no} {o.title} ({o.memberId})
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {renderOriginDetail(fullViewOriginNo)}
+                </div>
+              </section>
+
+              {/* 섹션 4: M7 SNS 연재 18편 */}
+              <section
+                id="ks-section-sns"
+                className="scroll-mt-36 space-y-3 rounded-[10px] border-2 border-[#1F5E63]/20 bg-white p-4 sm:p-5 shadow-2xs"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-[3px] bg-[#1F5E63] px-2.5 py-0.5 font-mono text-xs font-bold text-white">
+                      섹션 4 · M7 SNS 연재 18편
+                    </span>
+                    <h2 className="text-sm font-bold text-zinc-900">
+                      이든/위하오/하루토/아이만 18편 보드 · 6비트 타임라인 · 무슬림 REL-01~06 · 1080×1350 SOS 카드 스튜디오 · 양방향 4장치 · 9주 캘린더
+                    </h2>
+                  </div>
+                </div>
+                <SnsModuleView
+                  store={store}
+                  setStore={setStore}
+                  mode="FULL"
+                  snsNo={fullViewSnsNo}
+                  onNavigateList={() => setRoute({ page: "sns" })}
+                  onNavigateDetail={(no) => setFullViewSnsNo(no)}
+                  onNavigateCard={(no) => setFullViewSnsNo(no)}
+                  onExportToGtStudio={
+                    onExportToGtStudio
+                      ? (ep, ch) => {
+                          const member = store.members.find(
+                            (m) => m.id === ep.memberId
+                          );
+                          const copyObj =
+                            ep.channelCopies.find((c) => c.channel === ch) ??
+                            ep.channelCopies[0];
+                          onExportToGtStudio({
+                            episodeNo: ep.no,
+                            episodeTitle: `[SNS ${ep.code}] ${ep.title}`,
+                            place: ep.place,
+                            expressions: [
+                              ep.card.koreanPhrase,
+                              ep.card.jihuQuote,
+                              ep.card.askPrompt,
+                            ],
+                            complianceRisk: ep.isMuslimEpisode,
+                            channelCode: ch === "LINE" ? "JP" : "KR",
+                            narration: copyObj?.copyText ?? ep.card.solutionTip,
+                            memberName: member
+                              ? `${member.nameKo} (${member.id}) + 한지후(M1)`
+                              : ep.memberId,
+                          });
+                        }
+                      : undefined
+                  }
+                />
+              </section>
+
+              {/* 섹션 5: M2~M4 시즌 1 (12화 × 4채널) */}
+              <section
+                id="ks-section-episodes"
+                className="scroll-mt-36 space-y-5 rounded-[10px] border-2 border-[#1F5E63]/20 bg-white p-4 sm:p-5 shadow-2xs"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-[3px] bg-[#1F5E63] px-2.5 py-0.5 font-mono text-xs font-bold text-white">
+                      섹션 5 · M2~M4 시즌 1 (12화 × 4채널)
+                    </span>
+                    <h2 className="text-sm font-bold text-zinc-900">
+                      12화 에피소드 보드 & 채널별(JP·US·KR·CN) 재조립 편집기
+                    </h2>
+                  </div>
+                </div>
+                {renderEpisodes()}
+
+                <div
+                  id="ks-section-episodes-detail"
+                  className="scroll-mt-36 space-y-4 border-t-2 border-dashed border-[#1F5E63]/30 pt-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-[6px] border border-[#1F5E63]/30 bg-[#1F5E63]/5 px-3.5 py-2">
+                    <span className="text-xs font-bold text-zinc-900">
+                      시즌 1 회차 상세 & 채널 재조립 편집기 바로 선택:
+                    </span>
+                    <div className="flex flex-wrap items-center gap-1">
+                      {store.episodes.map((ep) => (
+                        <button
+                          key={ep.no}
+                          type="button"
+                          onClick={() => setFullViewEpisodeNo(ep.no)}
+                          className={`rounded-[3px] px-2 py-0.5 font-mono text-[11px] font-bold transition-colors ${
+                            fullViewEpisodeNo === ep.no
+                              ? "bg-[#1F5E63] text-white"
+                              : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100"
+                          }`}
+                        >
+                          {ep.no}화
+                        </button>
+                      ))}
+                      <span className="mx-1 text-zinc-300">|</span>
+                      {(["JP", "US", "KR", "CN"] as const).map((ch) => (
+                        <button
+                          key={ch}
+                          type="button"
+                          onClick={() => setFullViewChannelCode(ch)}
+                          className={`rounded-[3px] px-2 py-0.5 font-mono text-[11px] font-bold transition-colors ${
+                            fullViewChannelCode === ch
+                              ? "bg-zinc-900 text-white"
+                              : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100"
+                          }`}
+                        >
+                          {ch}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {renderEpisodeDetail(fullViewEpisodeNo, fullViewChannelCode)}
+                  <div
+                    id="ks-section-episodes-editor"
+                    className="scroll-mt-36 border-t border-zinc-200 pt-4"
+                  >
+                    {renderChannelEditPage(
+                      fullViewEpisodeNo,
+                      fullViewChannelCode
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              {/* 섹션 6: 시즌 2 데뷔 서사 (10화) */}
+              <section
+                id="ks-section-season2"
+                className="scroll-mt-36 space-y-5 rounded-[10px] border-2 border-[#1F5E63]/20 bg-white p-4 sm:p-5 shadow-2xs"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-[3px] bg-[#1F5E63] px-2.5 py-0.5 font-mono text-xs font-bold text-white">
+                      섹션 6 · 시즌 2 데뷔 서사 (10화)
+                    </span>
+                    <h2 className="text-sm font-bold text-zinc-900">
+                      PART A·B·C 보드 & B1 AC-20 전환 게이트 & 4대 참여 장치
+                    </h2>
+                  </div>
+                </div>
+                {renderSeason2()}
+
+                <div
+                  id="ks-section-season2-detail"
+                  className="scroll-mt-36 space-y-3 border-t-2 border-dashed border-[#1F5E63]/30 pt-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-[6px] border border-[#1F5E63]/30 bg-[#1F5E63]/5 px-3.5 py-2">
+                    <span className="text-xs font-bold text-zinc-900">
+                      시즌 2 회차 상세 & B1 쇼케이스 전환(AC-20) 게이트 바로 선택:
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {(store.season2Episodes ?? INITIAL_SEASON2_EPISODES).map(
+                        (s2) => (
+                          <button
+                            key={s2.code}
+                            type="button"
+                            onClick={() => setFullViewSeason2Code(s2.code)}
+                            className={`rounded-[3px] px-2.5 py-0.5 font-mono text-[11px] font-bold transition-colors ${
+                              fullViewSeason2Code === s2.code
+                                ? "bg-[#1F5E63] text-white"
+                                : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100"
+                            }`}
+                          >
+                            {s2.code} · {s2.title}
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </div>
+                  {renderSeason2Detail(fullViewSeason2Code)}
+                </div>
+              </section>
+
+              {/* 섹션 7: M3 크레딧 */}
+              <section
+                id="ks-section-credits"
+                className="scroll-mt-36 space-y-3 rounded-[10px] border-2 border-[#1F5E63]/20 bg-white p-4 sm:p-5 shadow-2xs"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-[3px] bg-[#1F5E63] px-2.5 py-0.5 font-mono text-xs font-bold text-white">
+                      섹션 7 · M3 크레딧
+                    </span>
+                    <h2 className="text-sm font-bold text-zinc-900">
+                      월 예산 게이지 & 회차별 채택률 테이블
+                    </h2>
+                  </div>
+                </div>
+                <CreditsView />
+              </section>
+
+              {/* 섹션 8: M4 컴플라이언스 */}
+              <section
+                id="ks-section-compliance"
+                className="scroll-mt-36 space-y-3 rounded-[10px] border-2 border-[#1F5E63]/20 bg-white p-4 sm:p-5 shadow-2xs"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-[3px] bg-[#1F5E63] px-2.5 py-0.5 font-mono text-xs font-bold text-white">
+                      섹션 8 · M4 컴플라이언스
+                    </span>
+                    <h2 className="text-sm font-bold text-zinc-900">
+                      일본 시장 7항목(약기법 등) × 12화 검수 매트릭스
+                    </h2>
+                  </div>
+                </div>
+                {renderCompliance()}
+              </section>
+
+              {/* 섹션 9: M4 참여 */}
+              <section
+                id="ks-section-engagement"
+                className="scroll-mt-36 space-y-3 rounded-[10px] border-2 border-[#1F5E63]/20 bg-white p-4 sm:p-5 shadow-2xs"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-[3px] bg-[#1F5E63] px-2.5 py-0.5 font-mono text-xs font-bold text-white">
+                      섹션 9 · M4 참여
+                    </span>
+                    <h2 className="text-sm font-bold text-zinc-900">
+                      하루토 얼굴 공개(50%) 응원 게이지 & 팬덤명 5대 조건 게이트 & 미션 트래커
+                    </h2>
+                  </div>
+                </div>
+                {renderEngagement()}
+              </section>
+            </div>
+          ) : (
+            <>
+              {route.page === "personaChat" && (
+                <PersonaChatSimulator
+                  members={store.members}
+                  onExportToGtStudio={onExportToGtStudio}
+                />
+              )}
+              {route.page === "dashboard" && renderDashboard()}
+              {route.page === "members" && renderMembers()}
+              {route.page === "origins" && renderOrigins()}
+              {route.page === "originDetail" &&
+                renderOriginDetail(route.originNo)}
+              {(route.page === "sns" ||
+                route.page === "snsDetail" ||
+                route.page === "snsCard") && (
+                <SnsModuleView
+                  store={store}
+                  setStore={setStore}
+                  mode={
+                    route.page === "sns"
+                      ? "LIST"
+                      : route.page === "snsDetail"
+                      ? "DETAIL"
+                      : "CARD"
+                  }
+                  snsNo={
+                    route.page === "snsDetail" || route.page === "snsCard"
+                      ? route.snsNo
+                      : 1
+                  }
+                  onNavigateList={() => setRoute({ page: "sns" })}
+                  onNavigateDetail={(no) =>
+                    setRoute({ page: "snsDetail", snsNo: no })
+                  }
+                  onNavigateCard={(no) =>
+                    setRoute({ page: "snsCard", snsNo: no })
+                  }
+                  onExportToGtStudio={
+                    onExportToGtStudio
+                      ? (ep, ch) => {
+                          const member = store.members.find(
+                            (m) => m.id === ep.memberId
+                          );
+                          const copyObj =
+                            ep.channelCopies.find((c) => c.channel === ch) ??
+                            ep.channelCopies[0];
+                          onExportToGtStudio({
+                            episodeNo: ep.no,
+                            episodeTitle: `[SNS ${ep.code}] ${ep.title}`,
+                            place: ep.place,
+                            expressions: [
+                              ep.card.koreanPhrase,
+                              ep.card.jihuQuote,
+                              ep.card.askPrompt,
+                            ],
+                            complianceRisk: ep.isMuslimEpisode,
+                            channelCode: ch === "LINE" ? "JP" : "KR",
+                            narration: copyObj?.copyText ?? ep.card.solutionTip,
+                            memberName: member
+                              ? `${member.nameKo} (${member.id}) + 한지후(M1)`
+                              : ep.memberId,
+                          });
+                        }
+                      : undefined
+                  }
+                />
+              )}
+              {route.page === "episodes" && renderEpisodes()}
+              {route.page === "episodeDetail" &&
+                renderEpisodeDetail(route.episodeNo, route.channelCode)}
+              {route.page === "channelEdit" &&
+                renderChannelEditPage(route.episodeNo, route.channelCode)}
+              {route.page === "season2" && renderSeason2()}
+              {route.page === "season2Detail" &&
+                renderSeason2Detail(route.code)}
+              {route.page === "credits" && <CreditsView />}
+              {route.page === "compliance" && renderCompliance()}
+              {route.page === "engagement" && renderEngagement()}
+            </>
+          )}
         </main>
       </div>
 
@@ -7067,6 +7821,22 @@ export default function App({
                   />
                 </div>
               </div>
+
+              {selectedMember.domainAnchorBadge && (
+                <div className="rounded-[6px] border-2 border-[#1F5E63]/35 bg-[#1F5E63]/5 p-3.5 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-[3px] bg-[#1F5E63] px-2 py-0.5 font-bold text-white">
+                      {selectedMember.domainAnchorBadge}
+                    </span>
+                    <span className="font-mono text-[11px] font-semibold text-[#1F5E63]">
+                      외국인 5대 페인포인트 전담 앵커
+                    </span>
+                  </div>
+                  <p className="text-zinc-800 font-medium leading-relaxed">
+                    {selectedMember.domainAnchorDesc}
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-3 rounded-[6px] border border-zinc-200 bg-zinc-50 p-3.5">
                 <div className="flex items-center justify-between">

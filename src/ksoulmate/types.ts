@@ -30,6 +30,9 @@ export interface Member {
   voiceProfile: string | null;
   channelCode: string | null;
   locked: boolean;
+  domainAnchorBadge?: string;
+  domainAnchorDesc?: string;
+  personaLabel?: string;
 }
 
 export interface Channel {
@@ -53,6 +56,10 @@ export interface Episode {
   place: string;
   memberId: string | null;
   expressions: string[];
+  narrativeSituation?: string;
+  kMemeSlang?: string;
+  realNuance?: string;
+  survivalTip?: string;
   baseVideoUrl: string | null;
   status: EpisodeStatus;
   complianceRisk: boolean;
@@ -321,6 +328,133 @@ export interface ReleasePhaseItem {
   status: "DONE" | "ACTIVE" | "UPCOMING";
 }
 
+export type SnsStatus =
+  | "PLANNING"
+  | "SCRIPTED"
+  | "CARD_READY"
+  | "REVIEWED"
+  | "PUBLISHED";
+
+export type SnsBeatCode =
+  | "hook"
+  | "block"
+  | "appear"
+  | "solve"
+  | "sos"
+  | "ask";
+
+export interface SnsBeat {
+  id: number;
+  code: SnsBeatCode;
+  label: string;
+  secRange: string;
+  sceneDesc: string;
+  done: boolean;
+}
+
+export interface SnsCard {
+  headline: string;
+  problemText: string;
+  solutionTip: string;
+  koreanPhrase: string;
+  pronunciation: string;
+  jihuQuote: string;
+  askPrompt: string;
+  accentColor: string;
+}
+
+export interface SnsChannelCopy {
+  channel: "IG" | "X" | "LINE";
+  copyText: string;
+  hashtags: string;
+  status: VersionStatus;
+}
+
+export interface SnsMuslimCheck {
+  id: number;
+  code: string; // "REL-01" ~ "REL-06"
+  rule: string;
+  done: boolean;
+}
+
+export interface SnsEpisode {
+  id: number;
+  no: number; // 1 ~ 18
+  code: string; // E1~E4, W1~W4, H1~H4, A1~A3, I1~I3
+  memberId: "M2" | "M3" | "M4" | "M5";
+  helperMemberId: "M1";
+  title: string;
+  place: string;
+  barrier: string;
+  jihuAction: string;
+  isMuslimEpisode: boolean;
+  status: SnsStatus;
+  releaseWeek: number;
+  releaseDay: "화" | "금";
+  beats: SnsBeat[];
+  card: SnsCard;
+  channelCopies: SnsChannelCopy[];
+  muslimChecks: SnsMuslimCheck[];
+}
+
+export interface SnsQuestion {
+  id: number;
+  episodeCode: string;
+  fanHandle: string;
+  lang: "JP" | "EN" | "CN" | "KR";
+  question: string;
+  jihuReply: string;
+  replied: boolean;
+  pinned: boolean;
+}
+
+export interface SnsTopicVote {
+  id: number;
+  weekLabel: string;
+  question: string;
+  optionA: string;
+  votesA: number;
+  optionB: string;
+  votesB: number;
+  status: "OPEN" | "CLOSED";
+  adoptedEpisodeCode: string | null;
+}
+
+export interface SnsUgc {
+  id: number;
+  submitter: string;
+  nationality: string;
+  episodeTarget: string;
+  story: string;
+  status: "PENDING" | "ADOPTED" | "REJECTED";
+  creditNote: string;
+}
+
+export interface SnsEngagement {
+  episodeCode: string;
+  views: number;
+  saves: number;
+  shares: number;
+  questionComments: number;
+  saveRatePercent: number;
+}
+
+export const SNS_STATUS_LABELS: Record<SnsStatus, string> = {
+  PLANNING: "기획",
+  SCRIPTED: "6비트대본",
+  CARD_READY: "카드완성",
+  REVIEWED: "검수",
+  PUBLISHED: "발행",
+};
+
+export const SNS_STATUS_ORDER: SnsStatus[] = [
+  "PLANNING",
+  "SCRIPTED",
+  "CARD_READY",
+  "REVIEWED",
+  "PUBLISHED",
+];
+
 export interface ConsoleStoreState {
   members: Member[];
   channels: Channel[];
@@ -334,6 +468,11 @@ export interface ConsoleStoreState {
   fandomCandidates: FandomCandidate[];
   gauges: Gauge[];
   origins: Origin[];
+  snsEpisodes?: SnsEpisode[];
+  snsQuestions?: SnsQuestion[];
+  snsTopicVotes?: SnsTopicVote[];
+  snsUgcList?: SnsUgc[];
+  snsEngagements?: SnsEngagement[];
   season2Episodes?: Season2Episode[];
   season2Devices?: Season2ParticipationDevice[];
   releasePhases?: ReleasePhaseItem[];

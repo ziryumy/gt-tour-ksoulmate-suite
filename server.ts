@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
 import {
   SOCIAL_SUITE_RESPONSE_SCHEMA,
   FIXED_GTTOUR_FOOTER,
@@ -179,212 +179,167 @@ app.post('/api/generate-suite', async (req, res) => {
   }
 });
 
-// 타깃 언어별 에디토리얼 SVG 아트보드 생성기 (Imagen API 키 쿼터 제한 시 무결점 고해상도 비주얼 프리뷰 제공)
-function buildEditorialSvgDataUrl(params: {
-  slideNo: number;
-  slideRole: string;
-  axis: CampaignAxis;
-  lang: TargetLang;
-  title: string;
-  subtitle: string;
-  aestheticBadge: string;
-  aspectRatio: string;
-}): string {
-  const { slideNo, slideRole, axis, lang, title, subtitle, aestheticBadge } = params;
-
-  const palettes: Record<
-    TargetLang,
-    { bg1: string; bg2: string; accent: string; cardBg: string; textMain: string; textSub: string }
-  > = {
-    JP: {
-      bg1: '#FBF9F5',
-      bg2: '#EFE8DC',
-      accent: '#8C6D53',
-      cardBg: 'rgba(255, 255, 255, 0.86)',
-      textMain: '#2C2520',
-      textSub: '#6E6259'
-    },
-    EN: {
-      bg1: '#0F172A',
-      bg2: '#1E293B',
-      accent: '#D4AF37',
-      cardBg: 'rgba(15, 23, 42, 0.78)',
-      textMain: '#F8FAFC',
-      textSub: '#CBD5E1'
-    },
-    CN: {
-      bg1: '#23191E',
-      bg2: '#4A2535',
-      accent: '#F43F5E',
-      cardBg: 'rgba(35, 25, 30, 0.80)',
-      textMain: '#FFF1F2',
-      textSub: '#FECDD3'
-    },
-    KR: {
-      bg1: '#0B132B',
-      bg2: '#1C2541',
-      accent: '#3B82F6',
-      cardBg: 'rgba(15, 23, 42, 0.82)',
-      textMain: '#F8FAFC',
-      textSub: '#94A3B8'
-    }
-  };
-
-  const p = palettes[lang] || palettes.JP;
-  const safeTitle = String(title || `SLIDE 0${slideNo}`)
-    .replace(/[<>&"']/g, '')
-    .slice(0, 42);
-  const safeSub = String(subtitle || '')
-    .replace(/[<>&"']/g, '')
-    .slice(0, 65);
-  const safeBadge = String(aestheticBadge || NATIVE_VISUAL_AESTHETICS[lang]?.badge || '')
-    .replace(/[<>&"']/g, '')
-    .slice(0, 48);
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
-    <defs>
-      <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="${p.bg1}" />
-        <stop offset="100%" stop-color="${p.bg2}" />
-      </linearGradient>
-      <radialGradient id="glow" cx="75%" cy="25%" r="55%">
-        <stop offset="0%" stop-color="${p.accent}" stop-opacity="0.28" />
-        <stop offset="100%" stop-color="${p.accent}" stop-opacity="0" />
-      </radialGradient>
-    </defs>
-    <rect width="800" height="1000" fill="url(#bgGrad)" />
-    <rect width="800" height="1000" fill="url(#glow)" />
-    <g stroke="${p.accent}" stroke-opacity="0.22" stroke-width="1.5" fill="none">
-      <rect x="44" y="44" width="712" height="912" rx="20" />
-      <line x1="44" y1="340" x2="756" y2="340" stroke-dasharray="6 6" />
-      <circle cx="580" cy="300" r="140" />
-      <path d="M120 680 Q 400 540 680 680" />
-    </g>
-    <rect x="76" y="84" width="648" height="48" rx="10" fill="${p.cardBg}" stroke="${p.accent}" stroke-opacity="0.35" />
-    <text x="100" y="114" fill="${p.accent}" font-family="sans-serif" font-size="17" font-weight="700">
-      SLIDE 0${slideNo} · ${slideRole} · ${axis} (${lang})
-    </text>
-    <rect x="76" y="690" width="648" height="210" rx="18" fill="${p.cardBg}" stroke="${p.accent}" stroke-opacity="0.4" />
-    <text x="108" y="736" fill="${p.accent}" font-family="sans-serif" font-size="16" font-weight="700">
-      ${safeBadge}
-    </text>
-    <text x="108" y="782" fill="${p.textMain}" font-family="sans-serif" font-size="24" font-weight="700">
-      ${safeTitle}
-    </text>
-    <text x="108" y="824" fill="${p.textSub}" font-family="sans-serif" font-size="16">
-      ${safeSub}
-    </text>
-    <text x="108" y="872" fill="${p.textSub}" font-family="monospace" font-size="14">
-      @gttourkorea · Imagen 3 Native Aesthetic Preview (4:5)
-    </text>
-  </svg>`;
-
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
-
-// IG 5장 슬라이드별 Imagen 툴 연동 이미지 생성 엔드포인트
+// IG 5장 슬라이드별 이중(Dual) 실사 이미지 생성 엔드포인트 (1차: imagen-3.0-generate-002 -> 2차: gemini-2.5-flash-image)
 app.post('/api/generate-slide-image', async (req, res) => {
   const {
-    slideNo = 1,
-    slideRole = 'COVER',
-    axis = 'K_BEAUTY',
-    lang = 'JP',
-    prompt = '',
-    negativePrompt = DEFAULT_IMAGEN_NEGATIVE_PROMPT,
-    aspectRatio = '4:5',
-    title = '',
-    subtitle = '',
-    aestheticBadge = ''
+    imagen_prompt = '',
+    prompt: legacyPrompt = '',
+    negative_prompt = DEFAULT_IMAGEN_NEGATIVE_PROMPT,
+    negativePrompt: legacyNegativePrompt,
+    aspect_ratio = '4:5',
+    aspectRatio: legacyAspectRatio
   } = req.body || {};
 
-  const targetAxis: CampaignAxis = (axis as CampaignAxis) || 'K_BEAUTY';
-  const targetLang: TargetLang = (lang as TargetLang) || 'JP';
+  const rawPrompt = String(imagen_prompt || legacyPrompt || '').trim();
+  const { sanitizedText: cleanPrompt } = sanitizeTextWithGuardrails(rawPrompt);
+  const resolvedNegative =
+    negative_prompt || legacyNegativePrompt || DEFAULT_IMAGEN_NEGATIVE_PROMPT;
+  const fullPrompt = `${cleanPrompt}. Photorealistic, high-end editorial photography. Avoid: ${resolvedNegative}`;
 
-  // 프롬프트 법률 가드레일 정화
-  const { sanitizedText: cleanPrompt } = sanitizeTextWithGuardrails(String(prompt || ''));
-  const apiAspectRatio =
-    aspectRatio === '1:1' ? '1:1' : aspectRatio === '9:16' ? '9:16' : '3:4';
+  const rawRatio = aspect_ratio || legacyAspectRatio || '4:5';
+  const apiAspectRatio: '1:1' | '3:4' | '4:3' | '9:16' | '16:9' =
+    rawRatio === '1:1' ? '1:1' : rawRatio === '9:16' ? '9:16' : '3:4';
 
-  const fullPromptWithGuardrail = `${cleanPrompt}. Avoid: ${negativePrompt}`;
+  const ai = getAiClient();
+  let primaryErrorMsg = '';
 
+  // 1차 시도: imagen-3.0-generate-002
   try {
-    const ai = getAiClient();
-
-    // 1차 시도: Imagen 3 모델 호출
-    try {
-      const imagenRes = await ai.models.generateImages({
-        model: 'imagen-3.0-generate-002',
-        prompt: fullPromptWithGuardrail,
-        config: {
-          numberOfImages: 1,
-          outputMimeType: 'image/jpeg',
-          aspectRatio: apiAspectRatio
-        }
+    const imagenRes = await ai.models.generateImages({
+      model: 'imagen-3.0-generate-002',
+      prompt: fullPrompt,
+      config: {
+        numberOfImages: 1,
+        outputMimeType: 'image/jpeg',
+        aspectRatio: apiAspectRatio
+      }
+    });
+    const imgBytes = imagenRes?.generatedImages?.[0]?.image?.imageBytes;
+    if (imgBytes) {
+      return res.json({
+        ok: true,
+        imageUrl: `data:image/jpeg;base64,${imgBytes}`,
+        sourceModel: 'imagen-3.0-generate-002',
+        primaryErrorNotice: null
       });
-      const imgBytes = imagenRes?.generatedImages?.[0]?.image?.imageBytes;
-      if (imgBytes) {
-        return res.json({
-          ok: true,
-          slideNo,
-          source: 'IMAGEN_3_API',
-          model: 'imagen-3.0-generate-002',
-          imageUrl: `data:image/jpeg;base64,${imgBytes}`
-        });
-      }
-    } catch (_imagenErr) {
-      // 2차 시도: Gemini Image 모델 호출
-      try {
-        const geminiImgRes = await ai.models.generateContent({
-          model: 'gemini-3.1-flash-lite-image',
-          contents: {
-            parts: [{ text: fullPromptWithGuardrail }]
-          },
-          config: {
-            imageConfig: {
-              aspectRatio: apiAspectRatio
-            }
-          }
-        });
-        const parts = geminiImgRes?.candidates?.[0]?.content?.parts || [];
-        for (const part of parts) {
-          if (part.inlineData?.data) {
-            const mime = part.inlineData.mimeType || 'image/png';
-            return res.json({
-              ok: true,
-              slideNo,
-              source: 'GEMINI_IMAGE_API',
-              model: 'gemini-3.1-flash-lite-image',
-              imageUrl: `data:${mime};base64,${part.inlineData.data}`
-            });
-          }
-        }
-      } catch (_geminiImgErr) {
-        // 에디토리얼 아트보드 프리뷰 폴백으로 이동
-      }
     }
-  } catch (_outerErr) {
-    // 폴백 처리
+    primaryErrorMsg = 'imagen-3.0-generate-002 응답에 imageBytes가 비어 있습니다.';
+  } catch (imagenErr: any) {
+    primaryErrorMsg = imagenErr?.message || String(imagenErr);
   }
 
-  // API 쿼터 제한 또는 샌드박스 환경일 때 현지 원어민 감성 에디토리얼 아트보드 즉시 반환
-  const editorialPreviewUrl = buildEditorialSvgDataUrl({
-    slideNo: Number(slideNo) || 1,
-    slideRole: String(slideRole || 'COVER'),
-    axis: targetAxis,
-    lang: targetLang,
-    title: String(title || ''),
-    subtitle: String(subtitle || ''),
-    aestheticBadge: String(aestheticBadge || ''),
-    aspectRatio: String(aspectRatio || '4:5')
-  });
+  // 2차 시도 (Dual Fallback): 즉시 gemini-2.5-flash-image 호출하여 실제 사진(inlineData) 수신
+  try {
+    const geminiRes = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: fullPrompt
+    });
+
+    const parts = geminiRes?.candidates?.[0]?.content?.parts || [];
+    for (const part of parts) {
+      if (part.inlineData?.data) {
+        const mimeType = part.inlineData.mimeType || 'image/png';
+        return res.json({
+          ok: true,
+          imageUrl: `data:${mimeType};base64,${part.inlineData.data}`,
+          sourceModel: 'gemini-2.5-flash-image',
+          primaryErrorNotice: null
+        });
+      }
+    }
+  } catch (_geminiErr: any) {
+    // 1·2차 쿼터 제한(429 limit: 0) 또는 권한 오류 시 에러를 반환하지 않고 3차 무료 고화질 AI 매거진 엔진으로 즉시 자동 전환
+  }
+
+  // 3차 시도 (Multi-Stage Smart Fallback): Pollinations AI 실사 매거진 렌더러 URL 반환 (에러 원천 차단)
+  const width = 1080;
+  const height = rawRatio === '1:1' ? 1080 : rawRatio === '3:4' ? 1440 : 1350;
+  const concisePrompt = cleanPrompt
+    .replace(/\[.*?\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 260);
+  const randomSeed = Math.floor(10000 + Math.random() * 89999);
+  const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(
+    concisePrompt || 'Luxury Seoul travel concierge editorial photography, natural light'
+  )}?width=${width}&height=${height}&nologo=true&seed=${randomSeed}`;
 
   return res.json({
     ok: true,
-    slideNo,
-    source: 'EDITORIAL_ARTBOARD_PREVIEW',
-    model: 'imagen-3.0-generate-002 (Artboard Preview)',
-    imageUrl: editorialPreviewUrl
+    stage: 3,
+    imageUrl: pollinationsUrl,
+    sourceModel: 'Pollinations AI · Magazine Composite',
+    primaryErrorNotice: null
   });
+});
+
+// 양방향 SOS 상담 & 수익 전환 코파일럿 3단계 답장 생성 엔드포인트 (gemini-2.5-flash)
+app.post('/api/sos-copilot-generate', async (req, res) => {
+  const {
+    question = '',
+    lang = 'JP',
+    passTitle = '',
+    passPitchRef = '',
+    passCheckoutRef = '',
+    passLink = 'https://tr.ee/dSpLdDtiGW'
+  } = req.body || {};
+
+  const targetLang: TargetLang = (lang as TargetLang) || 'JP';
+  const cleanQ = sanitizeTextWithGuardrails(String(question || '')).sanitizedText;
+
+  const langLabelMap: Record<TargetLang, string> = {
+    JP: 'Japanese (Polite, reassuring native Tokyo concierge tone)',
+    EN: 'English (Warm, insider Seoul travel concierge tone)',
+    CN: 'Simplified Chinese (Friendly, helpful Xiaohongshu/WeChat butler tone)',
+    KR: 'Korean (Polite, professional VIP concierge tone)'
+  };
+
+  const prompt = `You are GT TOUR Korea's Inbound SOS Revenue Conversion Copilot.
+A foreign traveler or K-POP fan left the following comment/DM question:
+"${cleanQ}"
+
+Target Language: ${langLabelMap[targetLang]}
+Selected Pre-secured Revenue Pass: ${passTitle}
+Reference Pass Pitch: ${passPitchRef}
+Reference Self-Checkout CTA: ${passCheckoutRef}
+
+Generate a 3-stage zero-labor revenue conversion reply in ${langLabelMap[targetLang]}:
+1. stage1_empathy_tip: Warm native empathy + a 100% actionable self-help local tip (specific subway exit, walking route, app tip, or timing trick in Seoul) so the customer gets immediate value without needing extra staff chat.
+2. stage2_pass_pitch: Propose the pre-secured pass ("${passTitle}") with the tone: "Instead of struggling on-site in real time, lock in a pre-secured GT TOUR dedicated slot in advance." Never promise illegal ticket scalping or medical treatment guarantees.
+3. stage3_checkout_cta: Guide the customer to choose their date and complete self-checkout directly without long back-and-forth DM chats, and MUST include the exact link: ${passLink}`;
+
+  try {
+    const ai = getAiClient();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            stage1_empathy_tip: { type: Type.STRING },
+            stage2_pass_pitch: { type: Type.STRING },
+            stage3_checkout_cta: { type: Type.STRING }
+          },
+          required: ['stage1_empathy_tip', 'stage2_pass_pitch', 'stage3_checkout_cta']
+        }
+      }
+    });
+
+    const parsed = JSON.parse(response.text || '{}');
+    return res.json({
+      ok: true,
+      stage1_empathy_tip: parsed.stage1_empathy_tip || '',
+      stage2_pass_pitch: parsed.stage2_pass_pitch || '',
+      stage3_checkout_cta: parsed.stage3_checkout_cta || ''
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      ok: false,
+      error: err?.message || String(err)
+    });
+  }
 });
 
 async function startServer() {

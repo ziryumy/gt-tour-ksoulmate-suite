@@ -1,4 +1,10 @@
-import { Type, type Schema } from '@google/genai';
+const Type = {
+  OBJECT: 'OBJECT',
+  STRING: 'STRING',
+  ARRAY: 'ARRAY',
+  BOOLEAN: 'BOOLEAN',
+  INTEGER: 'INTEGER'
+} as const;
 
 export type CampaignAxis = 'HOTPLACE' | 'STAY' | 'K_BEAUTY' | 'KPOP_NEWS';
 export type TargetLang = 'JP' | 'EN' | 'CN' | 'KR';
@@ -481,7 +487,7 @@ export function buildSlideImagenPrompts(params: {
   ];
 }
 
-export const SOCIAL_SUITE_RESPONSE_SCHEMA: Schema = {
+export const SOCIAL_SUITE_RESPONSE_SCHEMA: any = {
   type: Type.OBJECT,
   required: [
     'campaign_meta',

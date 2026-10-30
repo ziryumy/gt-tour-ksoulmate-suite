@@ -13,6 +13,13 @@ import {
   INITIAL_SEASON2_DEVICES,
   INITIAL_SEASON2_EPISODES,
 } from "./season2Seed";
+import {
+  INITIAL_SNS_EPISODES,
+  INITIAL_SNS_QUESTIONS,
+  INITIAL_SNS_TOPIC_VOTES,
+  INITIAL_SNS_UGC,
+  INITIAL_SNS_ENGAGEMENT,
+} from "./snsSeed";
 
 export const COMPOSITE_ANIME_SHEET_URL =
   "/assets/aistudio/65117b40-b331-42a8-9caf-3da1d13d2907_52c00c9d.jpg";
@@ -82,6 +89,10 @@ const MEMBERS_SEED: Member[] = [
     voiceProfile: "voice-jihu-ko-01",
     channelCode: null,
     locked: true,
+    domainAnchorBadge: "🚇 [Anchor 1: 심야 이동·막차·로컬 시스템 총괄]",
+    domainAnchorDesc:
+      "콘서트 심야 귀가(몽촌토성/구일역 우회), 택시 승차거부 돌파, 한국 행정/배달/부동산 시스템 무심한 해결사",
+    personaLabel: "M1 한지후 · 무심한 츤데레 로컬 해결사",
   },
   {
     id: "M2",
@@ -105,6 +116,10 @@ const MEMBERS_SEED: Member[] = [
     voiceProfile: "voice-eden-en-01",
     channelCode: "US",
     locked: true,
+    domainAnchorBadge: "🔥 [Anchor 2: 성수·한남 웨이팅·키오스크·짐 보관]",
+    domainAnchorDesc:
+      "010 번호 없는 캐치테이블 돌파, 팝업 오픈런, 무인 키오스크/배달앱 인증, 캐리어 당일 배송(Zimcarry/Lugstay)",
+    personaLabel: "M2 이든 박 · 하이텐션 성수 인사이더 친구",
   },
   {
     id: "M3",
@@ -128,6 +143,10 @@ const MEMBERS_SEED: Member[] = [
     voiceProfile: "voice-weihao-zh-01",
     channelCode: "CN",
     locked: true,
+    domainAnchorBadge: "💄 [Anchor 3: 청담 K-뷰티·웰니스·약국·호구 방지]",
+    domainAnchorDesc:
+      "청담 헤메코 아이돌 시안 전달법, 클리닉 VAT 정찰제 확인, 약국 증상 설명, 성수 플래그십 즉시 면세(Tax Refund)",
+    personaLabel: "M3 린위하오 · 다정한 청담 뷰티·감성 멘토",
   },
   {
     id: "M4",
@@ -152,6 +171,10 @@ const MEMBERS_SEED: Member[] = [
     voiceProfile: "voice-haruto-ja-01",
     channelCode: "JP",
     locked: true,
+    domainAnchorBadge: "🍱 [Anchor 4: 로컬 식당·카페·오시카츠 성지순례]",
+    domainAnchorDesc:
+      "식당 호출벨·셀프바 뉘앙스, 생일카페(센카) 투어, 혼밥 맛집, 대중교통 환승 하차벨 & 도어락 별표(*) 생존법",
+    personaLabel: "M4 하루토 · 공감 100% 다정한 막내 메이트",
   },
   {
     id: "M5",
@@ -175,6 +198,10 @@ const MEMBERS_SEED: Member[] = [
     voiceProfile: "voice-aiman-en-01",
     channelCode: "MY",
     locked: true,
+    domainAnchorBadge: "🌍 [Anchor 5: 할랄·비건·맵기 방어·다문화 생존]",
+    domainAnchorDesc:
+      "편의점 뒷면 돼지고기/젤라틴 3초 판독 박스, K-분식 '고춧가루 제로' 주문법, 기도실 확보, 서울 영하 강추위 핫팩 생존법",
+    personaLabel: "M5 아이만 · 유쾌한 3개국어 할랄·맵찔이 구조대",
   },
 ];
 
@@ -234,18 +261,266 @@ const CHANNELS_SEED: Channel[] = [
 ];
 
 const EPISODES_SEED: Episode[] = [
-  { id: 1, no: 1, title: "아이스 아메리카노 한 잔 주세요", place: "성수동 카페 (2층 창가)", memberId: "M4", expressions: ["아이스 아메리카노 한 잔 주세요", "얼음은 적게 넣어 주세요", "여기서 마시고 갈게요"], baseVideoUrl: "https://storage.k-soulmate.internal/ep-01-master-130s.mp4", status: "PUBLISHED", complianceRisk: false },
-  { id: 2, no: 2, title: "이거 다른 색 있어요?", place: "성수동 편집숍", memberId: "M3", expressions: ["이거 다른 색 있어요?", "한 사이즈 크게 주세요", "입어봐도 돼요?"], baseVideoUrl: "https://storage.k-soulmate.internal/ep-02-master-130s.mp4", status: "REVIEWED", complianceRisk: false },
-  { id: 3, no: 3, title: "여기 스타일 좀 바꿔 주세요", place: "협력 · K-pop 헤어메이크업 스튜디오", memberId: "M4", expressions: ["이렇게 스타일링해 주세요", "너무 짧지 않게 해 주세요", "사진처럼 해 주실 수 있어요?"], baseVideoUrl: "https://storage.k-soulmate.internal/ep-03-master-130s.mp4", status: "EDITED", complianceRisk: true },
-  { id: 4, no: 4, title: "이 동작 다시 알려 주세요", place: "협력 · K-pop 댄스 트레이닝", memberId: "M5", expressions: ["이 동작 다시 알려 주세요", "조금 천천히 해 주세요", "박자에 맞춰 볼게요"], baseVideoUrl: "https://storage.k-soulmate.internal/ep-04-master-130s.mp4", status: "GENERATED", complianceRisk: false },
-  { id: 5, no: 5, title: "여기 줄이에요?", place: "성수동 팝업스토어", memberId: "M2", expressions: ["여기 줄 서는 거예요?", "이거 아직 재고 있어요?", "몇 시까지 해요?"], baseVideoUrl: null, status: "SCRIPTED", complianceRisk: false },
-  { id: 6, no: 6, title: "제 피부 고민은요", place: "협력 · 프리미엄 피부과·안티에이징", memberId: "M3", expressions: ["여기서 상담받을 수 있나요?", "제 피부 타입이 어떻게 되나요?", "관리 후 주의할 점이 있나요?"], baseVideoUrl: null, status: "PLANNING", complianceRisk: true },
-  { id: 7, no: 7, title: "제 피부 타입 설명해 주세요", place: "협력 · 1:1 뷰티 클래스", memberId: "M2", expressions: ["제 피부는 어떤 타입인가요?", "이 단계는 어떻게 하는 거예요?", "집에서도 이렇게 하면 되나요?"], baseVideoUrl: null, status: "PLANNING", complianceRisk: true },
-  { id: 8, no: 8, title: "이 부분 다시 불러 주세요", place: "협력 · K-pop 보컬 트레이닝", memberId: "M3", expressions: ["이 부분 다시 불러 주세요", "숨을 어디서 쉬어야 해요?", "조금 더 감정을 넣어 볼게요"], baseVideoUrl: null, status: "PLANNING", complianceRisk: false },
-  { id: 9, no: 9, title: "덜 맵게 해 주세요", place: "성수동 한식당", memberId: "M5", expressions: ["덜 맵게 해 주세요", "뭐가 제일 맛있어요?", "물 좀 더 주시겠어요?"], baseVideoUrl: null, status: "PLANNING", complianceRisk: false },
-  { id: 10, no: 10, title: "사진 한 장 찍어 주세요", place: "성수동 사진관", memberId: "M4", expressions: ["여기서 사진 찍어도 돼요?", "한 장만 더 찍어 주세요", "이거 받을 수 있어요?"], baseVideoUrl: null, status: "PLANNING", complianceRisk: false },
-  { id: 11, no: 11, title: "5인 합류 · 성수동 전역 미션", place: "성수동 전역", memberId: null, expressions: ["각자 미션 수행", "다섯 명 동시 주문", "합격 판정"], baseVideoUrl: null, status: "PLANNING", complianceRisk: false },
-  { id: 12, no: 12, title: "첫 한국어 발표", place: "성수동 (실내)", memberId: null, expressions: ["5분 스피치", "자기소개", "앞으로의 목표"], baseVideoUrl: null, status: "PLANNING", complianceRisk: false },
+  {
+    id: 1,
+    no: 1,
+    title: "영하 5도에 아이스를 마시는 이유",
+    place: "성수동 카페",
+    memberId: "M4",
+    narrativeSituation:
+      "추운 날 따뜻한 차를 시키려던 하루토가 옆자리 한국인들과 지후가 전부 아이스만 들고 있는 걸 보고 문화충격에 빠짐",
+    kMemeSlang: '🔥 [K-밈] "얼죽아 (얼어 죽어도 아이스 아메리카노)"',
+    realNuance: '💬 [실전 뉘앙스] "사장님, 얼음은 살짝만 넣어주세요"',
+    survivalTip: "💡 [생존 팁] 영수증 하단 화장실 도어락 비번 & 와이파이 찾는 법",
+    expressions: [
+      '🔥 [K-밈] "얼죽아 (얼어 죽어도 아이스 아메리카노)"',
+      '💬 [실전 뉘앙스] "사장님, 얼음은 살짝만 넣어주세요"',
+      "💡 [생존 팁] 영수증 하단 화장실 도어락 비번 & 와이파이 찾는 법",
+    ],
+    baseVideoUrl: "https://storage.k-soulmate.internal/ep-01-master-130s.mp4",
+    status: "PUBLISHED",
+    complianceRisk: false,
+  },
+  {
+    id: 2,
+    no: 2,
+    title: "성수 편집숍, 입어만 봐도 될까?",
+    place: "성수동 플래그십",
+    memberId: "M3",
+    narrativeSituation:
+      "직원이 계속 따라붙어 부담스러운 위하오가 눈치 보지 않고 오버핏 사이즈를 찾고 즉시 면세까지 챙기는 에피소드",
+    kMemeSlang: '🔥 [K-슬랭] "핏(Fit) 미쳤다 / 완전 찰떡인데?"',
+    realNuance:
+      '💬 [실전 뉘앙스] "천천히 둘러보고 부를게요 / 이거 한 치수 큰 거 재고 있나요?"',
+    survivalTip:
+      "💡 [생존 팁] 여권 제시 즉시 택스리펀드(15,000원 이상) 받는 법",
+    expressions: [
+      '🔥 [K-슬랭] "핏(Fit) 미쳤다 / 완전 찰떡인데?"',
+      '💬 [실전 뉘앙스] "천천히 둘러보고 부를게요 / 이거 한 치수 큰 거 재고 있나요?"',
+      "💡 [생존 팁] 여권 제시 즉시 택스리펀드(15,000원 이상) 받는 법",
+    ],
+    baseVideoUrl: "https://storage.k-soulmate.internal/ep-02-master-130s.mp4",
+    status: "REVIEWED",
+    complianceRisk: false,
+  },
+  {
+    id: 3,
+    no: 3,
+    title: "청담 아이돌 숍에서 사진 보여주기 민망할 때",
+    place: "청담 헤어메이크업",
+    memberId: "M4",
+    narrativeSituation:
+      "연예인 사진을 내밀기 부끄러워 우물쭈물하다가 지후가 알려준 '3장 전달 공식'으로 인생 헤메코를 받는 이야기",
+    kMemeSlang: '🔥 [K-밈] "오늘 완전 아이돌 재질인데?"',
+    realNuance:
+      '💬 [실전 뉘앙스] "이 사진 느낌으로 제 얼굴형에 맞게 시스루 뱅만 살려주세요"',
+    survivalTip: "💡 [생존 팁] 숍 방문 시 정면·옆모습·피부톤 사진 3장 준비 공식",
+    expressions: [
+      '🔥 [K-밈] "오늘 완전 아이돌 재질인데?"',
+      '💬 [실전 뉘앙스] "이 사진 느낌으로 제 얼굴형에 맞게 시스루 뱅만 살려주세요"',
+      "💡 [생존 팁] 숍 방문 시 정면·옆모습·피부톤 사진 3장 준비 공식",
+    ],
+    baseVideoUrl: "https://storage.k-soulmate.internal/ep-03-master-130s.mp4",
+    status: "EDITED",
+    complianceRisk: true,
+  },
+  {
+    id: 4,
+    no: 4,
+    title: "새벽 2시 성수 지하 연습실의 텐션",
+    place: "K-pop 댄스 스튜디오",
+    memberId: "M5",
+    narrativeSituation:
+      "안무 박자가 안 맞아 좌절하던 아이만이 한국의 '텐션' 문화를 배우며 댄서들과 하나가 되는 순간",
+    kMemeSlang: '🔥 [K-슬랭] "폼 미쳤다 / 텐션 올려!"',
+    realNuance:
+      '💬 [실전 뉘앙스] "방금 그 카운트만 반 박자 천천히 다시 가볼게요"',
+    survivalTip:
+      "💡 [생존 팁] 외국인 원데이 K-POP 댄스 클래스 예약 & 촬영 매너",
+    expressions: [
+      '🔥 [K-슬랭] "폼 미쳤다 / 텐션 올려!"',
+      '💬 [실전 뉘앙스] "방금 그 카운트만 반 박자 천천히 다시 가볼게요"',
+      "💡 [생존 팁] 외국인 원데이 K-POP 댄스 클래스 예약 & 촬영 매너",
+    ],
+    baseVideoUrl: "https://storage.k-soulmate.internal/ep-04-master-130s.mp4",
+    status: "GENERATED",
+    complianceRisk: false,
+  },
+  {
+    id: 5,
+    no: 5,
+    title: "010 번호 없이 성수 팝업 1등으로 들어가는 법",
+    place: "성수동 팝업스토어",
+    memberId: "M2",
+    narrativeSituation:
+      "한국 번호가 없어 태블릿 앞에서 멘붕에 빠진 이든과 외국인 팬을 구출하는 오픈런 대소동",
+    kMemeSlang: '🔥 [K-밈] "오픈런 성공적 / 대기 0분 실화냐"',
+    realNuance:
+      '💬 [실전 뉘앙스] "저 한국 번호 없는데 글로벌 이메일 웨이팅으로 걸어주실 수 있나요?"',
+    survivalTip:
+      "💡 [생존 팁] 캐치테이블 우측 하단 Global 버튼 & 10:30 워크인 골든타임",
+    expressions: [
+      '🔥 [K-밈] "오픈런 성공적 / 대기 0분 실화냐"',
+      '💬 [실전 뉘앙스] "저 한국 번호 없는데 글로벌 이메일 웨이팅으로 걸어주실 수 있나요?"',
+      "💡 [생존 팁] 캐치테이블 우측 하단 Global 버튼 & 10:30 워크인 골든타임",
+    ],
+    baseVideoUrl: null,
+    status: "SCRIPTED",
+    complianceRisk: false,
+  },
+  {
+    id: 6,
+    no: 6,
+    title: "청담 클리닉, 호구 안 잡히고 똑똑하게 상담받기",
+    place: "청담 뷰티·웰니스",
+    memberId: "M3",
+    narrativeSituation:
+      "화려한 청담 클리닉 상담실에서 추가 과금 유도 없이 부가세 포함 정찰제와 저자극 진정 케어만 똑똑하게 골라내는 위하오의 실전 돌파기",
+    kMemeSlang: '🔥 [K-슬랭] "피부에서 광이 나네 / 수분 충전 완료"',
+    realNuance:
+      '💬 [실전 뉘앙스] "부가세(VAT) 포함된 정찰제 금액 맞나요? 자극 없는 진정 위주로 해주세요"',
+    survivalTip:
+      "💡 [생존 팁] 외국인 바가지 방지 사전 문진 메모 4항목 체크리스트",
+    expressions: [
+      '🔥 [K-슬랭] "피부에서 광이 나네 / 수분 충전 완료"',
+      '💬 [실전 뉘앙스] "부가세(VAT) 포함된 정찰제 금액 맞나요? 자극 없는 진정 위주로 해주세요"',
+      "💡 [생존 팁] 외국인 바가지 방지 사전 문진 메모 4항목 체크리스트",
+    ],
+    baseVideoUrl: null,
+    status: "PLANNING",
+    complianceRisk: true,
+  },
+  {
+    id: 7,
+    no: 7,
+    title: "올리브영N 성수에서 길 잃은 외국인 구출작전",
+    place: "성수 뷰티 클래스",
+    memberId: "M2",
+    narrativeSituation:
+      "수천 개 화장품 매대 앞에서 길을 잃은 외국인 팬에게 이든이 2~3층 피부진단 코너부터 공략하는 로컬 동선을 전수하는 구출 작전",
+    kMemeSlang: '🔥 [K-밈] "내 인생템 찾았다 / 쟁여템(쟁여두고 쓰는 템)"',
+    realNuance:
+      '💬 [실전 뉘앙스] "민감성인데 요즘 한국에서 제일 잘 나가는 진정 앰플이 뭐예요?"',
+    survivalTip:
+      "💡 [생존 팁] 1층 매대 대신 2~3층 피부진단 코너 먼저 가는 동선",
+    expressions: [
+      '🔥 [K-밈] "내 인생템 찾았다 / 쟁여템(쟁여두고 쓰는 템)"',
+      '💬 [실전 뉘앙스] "민감성인데 요즘 한국에서 제일 잘 나가는 진정 앰플이 뭐예요?"',
+      "💡 [생존 팁] 1층 매대 대신 2~3층 피부진단 코너 먼저 가는 동선",
+    ],
+    baseVideoUrl: null,
+    status: "PLANNING",
+    complianceRisk: true,
+  },
+  {
+    id: 8,
+    no: 8,
+    title: "보컬 부스 안에서 찾은 진짜 내 목소리",
+    place: "성수 녹음실",
+    memberId: "M3",
+    narrativeSituation:
+      "발음 강박에 갇혀 있던 위하오가 엔지니어에게 모니터 볼륨을 요청하고 감정으로 고음을 터뜨린 뒤 다 같이 코인노래방으로 향하는 밤",
+    kMemeSlang: '🔥 [K-슬랭] "고음 찢었다 / 소름 돋았어"',
+    realNuance:
+      '💬 [실전 뉘앙스] "모니터 볼륨 조금만 올려주시고 한 테이크만 더 갈게요"',
+    survivalTip: "💡 [생존 팁] 한국 코인노래방(코노) 서비스 시간 받는 숨은 공식",
+    expressions: [
+      '🔥 [K-슬랭] "고음 찢었다 / 소름 돋았어"',
+      '💬 [실전 뉘앙스] "모니터 볼륨 조금만 올려주시고 한 테이크만 더 갈게요"',
+      "💡 [생존 팁] 한국 코인노래방(코노) 서비스 시간 받는 숨은 공식",
+    ],
+    baseVideoUrl: null,
+    status: "PLANNING",
+    complianceRisk: false,
+  },
+  {
+    id: 9,
+    no: 9,
+    title: '"안 맵다"는 한국 식당 사장님의 말을 믿지 마라',
+    place: "성수동 분식·한식당",
+    memberId: "M5",
+    narrativeSituation:
+      "'전혀 안 매워요'라는 사장님 말을 믿었다가 불타는 떡볶이에 눈물 흘린 아이만이 지후의 간장 베이스 주문 공식과 쿨피스로 기사회생하는 이야기",
+    kMemeSlang: '🔥 [K-밈] "맵찔이(매운 거 못 먹는 사람) 살려주세요"',
+    realNuance:
+      '💬 [실전 뉘앙스] "사장님, 고춧가루랑 후추 아예 빼고 간장 베이스로 안 맵게 가능할까요?"',
+    survivalTip:
+      "💡 [생존 팁] 한국 '순한맛=신라면급'의 진실과 쿨피스 긴급 처방법",
+    expressions: [
+      '🔥 [K-밈] "맵찔이(매운 거 못 먹는 사람) 살려주세요"',
+      '💬 [실전 뉘앙스] "사장님, 고춧가루랑 후추 아예 빼고 간장 베이스로 안 맵게 가능할까요?"',
+      "💡 [생존 팁] 한국 '순한맛=신라면급'의 진실과 쿨피스 긴급 처방법",
+    ],
+    baseVideoUrl: null,
+    status: "PLANNING",
+    complianceRisk: false,
+  },
+  {
+    id: 10,
+    no: 10,
+    title: "성수 네컷사진관에서 고데기 쓰다 시간 다 간 썰",
+    place: "성수동 포토부스",
+    memberId: "M4",
+    narrativeSituation:
+      "파우더룸 고데기와 머리띠 고르느라 바쁜 하루토가 10초 타이머 카운트다운에 허둥지둥하다 오히려 자연스러운 인생네컷을 건지는 에피소드",
+    kMemeSlang: '🔥 [K-밈] "인생샷 건졌다 / 건진 컷 있어?"',
+    realNuance:
+      '💬 [실전 뉘앙스] "우리 리모컨 누르는 타이밍 맞춰서 하나 둘 셋 하면 찍자!"',
+    survivalTip:
+      "💡 [생존 팁] 성수 포토부스 노웨이팅 시간대(11시/19시 이후) & QR 영상 저장법",
+    expressions: [
+      '🔥 [K-밈] "인생샷 건졌다 / 건진 컷 있어?"',
+      '💬 [실전 뉘앙스] "우리 리모컨 누르는 타이밍 맞춰서 하나 둘 셋 하면 찍자!"',
+      "💡 [생존 팁] 성수 포토부스 노웨이팅 시간대(11시/19시 이후) & QR 영상 저장법",
+    ],
+    baseVideoUrl: null,
+    status: "PLANNING",
+    complianceRisk: false,
+  },
+  {
+    id: 11,
+    no: 11,
+    title: "콘서트 끝나고 밤 11시, 다섯 명의 서울 탈출 대작전",
+    place: "올림픽공원 ➔ 성수",
+    memberId: null,
+    narrativeSituation:
+      "2만 명이 동시에 쏟아져 나온 올림픽공원 야간 콘서트 직후, 지후의 인솔로 몽촌토성역 우회 루트와 심야 택시 호출 포인트를 돌파하는 5인의 대작전",
+    kMemeSlang: '🔥 [K-밈] "올콘(전 회차 관람) 완료 / 퇴근길 전쟁"',
+    realNuance:
+      '💬 [실전 뉘앙스] "올림픽공원역 말고 몽촌토성역 쪽으로 걸어가자, 거기가 훨씬 빨라!"',
+    survivalTip:
+      "💡 [생존 팁] 심야 택시 안 잡힐 때 2정거장 이동 후 호출 & 심야 N버스 탑승법",
+    expressions: [
+      '🔥 [K-밈] "올콘(전 회차 관람) 완료 / 퇴근길 전쟁"',
+      '💬 [실전 뉘앙스] "올림픽공원역 말고 몽촌토성역 쪽으로 걸어가자, 거기가 훨씬 빨라!"',
+      "💡 [생존 팁] 심야 택시 안 잡힐 때 2정거장 이동 후 호출 & 심야 N버스 탑승법",
+    ],
+    baseVideoUrl: null,
+    status: "PLANNING",
+    complianceRisk: false,
+  },
+  {
+    id: 12,
+    no: 12,
+    title: "교과서엔 없는 우리만의 서울 생존기",
+    place: "성수동 루프탑 파티",
+    memberId: null,
+    narrativeSituation:
+      "교과서 문장 대신 직접 부딪히며 배운 K-밈과 생존 꿀팁으로 서울 패치를 완료한 다섯 멤버가 성수 루프탑에서 팬들을 초대하는 피날레",
+    kMemeSlang: '🔥 [K-밈] "오운완 / 서울 패치 100% 완료"',
+    realNuance:
+      '💬 [실전 뉘앙스] "처음엔 다 서툴렀지만, 이제 서울에서 너희가 막히면 우리가 다 해결해 줄게!"',
+    survivalTip:
+      "💡 [생존 팁] 5인 5색 서울 로컬 성지순례 마스터 맵 무료 배포 연결",
+    expressions: [
+      '🔥 [K-밈] "오운완 / 서울 패치 100% 완료"',
+      '💬 [실전 뉘앙스] "처음엔 다 서툴렀지만, 이제 서울에서 너희가 막히면 우리가 다 해결해 줄게!"',
+      "💡 [생존 팁] 5인 5색 서울 로컬 성지순례 마스터 맵 무료 배포 연결",
+    ],
+    baseVideoUrl: null,
+    status: "PLANNING",
+    complianceRisk: false,
+  },
 ];
 
 const COMPLIANCE_ITEMS_SEED: ComplianceItem[] = [
@@ -691,6 +966,11 @@ export function createInitialSeedState(): ConsoleStoreState {
       { id: 1, label: "하루토 얼굴 공개", threshold: 50, current: 0, unlocked: false },
     ],
     origins: ORIGINS_SEED,
+    snsEpisodes: INITIAL_SNS_EPISODES,
+    snsQuestions: INITIAL_SNS_QUESTIONS,
+    snsTopicVotes: INITIAL_SNS_TOPIC_VOTES,
+    snsUgcList: INITIAL_SNS_UGC,
+    snsEngagements: INITIAL_SNS_ENGAGEMENT,
     season2Episodes: INITIAL_SEASON2_EPISODES,
     season2Devices: INITIAL_SEASON2_DEVICES,
     releasePhases: INITIAL_RELEASE_PHASES,
@@ -698,16 +978,22 @@ export function createInitialSeedState(): ConsoleStoreState {
 }
 
 const STORAGE_KEY = "k_soulmate_console_store_v1";
+export const KSOULMATE_SCHEMA_V4_MEME_PERSONA =
+  "KSOULMATE_SCHEMA_V4_MEME_PERSONA";
 
 export function loadStore(): ConsoleStoreState {
   if (typeof window === "undefined") {
     return createInitialSeedState();
   }
   try {
+    const schemaVer = window.localStorage.getItem(
+      KSOULMATE_SCHEMA_V4_MEME_PERSONA
+    );
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
+    if (!raw || schemaVer !== "true") {
       const seeded = createInitialSeedState();
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+      window.localStorage.setItem(KSOULMATE_SCHEMA_V4_MEME_PERSONA, "true");
       return seeded;
     }
     const parsed = JSON.parse(raw) as ConsoleStoreState;
@@ -720,6 +1006,51 @@ export function loadStore(): ConsoleStoreState {
       parsed.origins[0]?.choice !== ORIGINS_SEED[0].choice
     ) {
       parsed.origins = ORIGINS_SEED;
+      mutated = true;
+    }
+
+    if (
+      !parsed.snsEpisodes ||
+      !Array.isArray(parsed.snsEpisodes) ||
+      parsed.snsEpisodes.length < 18
+    ) {
+      parsed.snsEpisodes = INITIAL_SNS_EPISODES;
+      mutated = true;
+    }
+
+    if (
+      !parsed.snsQuestions ||
+      !Array.isArray(parsed.snsQuestions) ||
+      parsed.snsQuestions.length === 0
+    ) {
+      parsed.snsQuestions = INITIAL_SNS_QUESTIONS;
+      mutated = true;
+    }
+
+    if (
+      !parsed.snsTopicVotes ||
+      !Array.isArray(parsed.snsTopicVotes) ||
+      parsed.snsTopicVotes.length === 0
+    ) {
+      parsed.snsTopicVotes = INITIAL_SNS_TOPIC_VOTES;
+      mutated = true;
+    }
+
+    if (
+      !parsed.snsUgcList ||
+      !Array.isArray(parsed.snsUgcList) ||
+      parsed.snsUgcList.length === 0
+    ) {
+      parsed.snsUgcList = INITIAL_SNS_UGC;
+      mutated = true;
+    }
+
+    if (
+      !parsed.snsEngagements ||
+      !Array.isArray(parsed.snsEngagements) ||
+      parsed.snsEngagements.length < 18
+    ) {
+      parsed.snsEngagements = INITIAL_SNS_ENGAGEMENT;
       mutated = true;
     }
 
@@ -752,19 +1083,44 @@ export function loadStore(): ConsoleStoreState {
 
     if (Array.isArray(parsed.members)) {
       const m1 = parsed.members.find((m) => m.id === "M1");
-      if (!m1 || !m1.animeSheetStatus || (!m1.animeSheetUrl && m1.animeSheetStatus !== "NONE")) {
+      if (
+        !m1 ||
+        !m1.animeSheetStatus ||
+        (!m1.animeSheetUrl && m1.animeSheetStatus !== "NONE") ||
+        !m1.domainAnchorBadge
+      ) {
         parsed.members = parsed.members.map((m) => {
           const def = DEFAULT_MEMBER_ANIME_SHEETS[m.id];
-          if (!def) return m;
+          const seedMember = MEMBERS_SEED.find((sm) => sm.id === m.id);
           return {
             ...m,
-            animeSheetUrl: m.animeSheetUrl ?? def.animeSheetUrl,
+            animeSheetUrl: m.animeSheetUrl ?? def?.animeSheetUrl ?? null,
             animeSheetQuadrant:
               m.animeSheetQuadrant !== undefined
                 ? m.animeSheetQuadrant
-                : def.animeSheetQuadrant,
-            animeSheetStatus: m.animeSheetStatus ?? def.animeSheetStatus,
-            animeSheetLabel: m.animeSheetLabel ?? def.animeSheetLabel,
+                : def?.animeSheetQuadrant ?? null,
+            animeSheetStatus: m.animeSheetStatus ?? def?.animeSheetStatus ?? "NONE",
+            animeSheetLabel: m.animeSheetLabel ?? def?.animeSheetLabel ?? null,
+            domainAnchorBadge:
+              m.domainAnchorBadge ?? seedMember?.domainAnchorBadge,
+            domainAnchorDesc:
+              m.domainAnchorDesc ?? seedMember?.domainAnchorDesc,
+            personaLabel: m.personaLabel ?? seedMember?.personaLabel,
+          };
+        });
+        mutated = true;
+      }
+    }
+
+    if (Array.isArray(parsed.episodes)) {
+      const ep1 = parsed.episodes.find((e) => e.no === 1);
+      if (!ep1 || !ep1.kMemeSlang || ep1.title !== EPISODES_SEED[0].title) {
+        parsed.episodes = EPISODES_SEED.map((seedEp) => {
+          const existing = parsed.episodes.find((e) => e.no === seedEp.no);
+          return {
+            ...seedEp,
+            status: existing?.status ?? seedEp.status,
+            baseVideoUrl: existing?.baseVideoUrl ?? seedEp.baseVideoUrl,
           };
         });
         mutated = true;
